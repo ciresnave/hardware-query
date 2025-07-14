@@ -1,0 +1,65 @@
+[package]
+name = "hardware-query"
+version = "0.1.0"
+edition = "2024"
+authors = ["Eric Evans <ciresnave@gmail.com>"]
+description = "Cross-platform Rust library for comprehensive hardware detection and system information querying"
+keywords = ["hardware", "system", "cpu", "gpu", "detection"]
+categories = ["api-bindings", "hardware-support", "os"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/ciresnave/hardware-query"
+homepage = "https://github.com/ciresnave/hardware-query"
+documentation = "https://docs.rs/hardware-query"
+readme = "README.md"
+rust-version = "1.85"
+exclude = ["target/", ".git/", "examples/output/", "benches/target/"]
+
+[dependencies]
+sysinfo = "0.36"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+thiserror = "2.0"
+num_cpus = "1.16"
+regex = "1.10"
+bytesize = "2.0"
+
+# Platform-specific dependencies
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3", features = ["winnt", "sysinfoapi", "powerbase", "pdh", "wbemcli", "oleauto"] }
+wmi = "0.17"
+windows = { version = "0.61", features = ["Win32_System_Performance", "Win32_Storage_FileSystem", "Win32_NetworkManagement_IpHelper"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+libc = "0.2"
+nix = "0.30"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+core-foundation = "0.10"
+core-foundation-sys = "0.8"
+system-configuration = "0.6"
+
+# Optional GPU libraries
+[dependencies.nvml-wrapper]
+version = "0.11"
+optional = true
+
+# Note: ROCm SMI bindings are not readily available on crates.io
+# We'll implement ROCm detection using system calls for now
+
+# Features
+[features]
+default = ["nvidia"]
+nvidia = ["nvml-wrapper"]
+amd = []  # ROCm detection via system calls
+intel = []
+gpu-all = ["nvidia", "amd", "intel"]
+
+[dev-dependencies]
+tokio = { version = "1.0", features = ["full"] }
+mockall = "0.13"
+criterion = "0.6"
+tempfile = "3.8"
+
+[[bench]]
+name = "hardware_benchmarks"
+harness = false
