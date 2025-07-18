@@ -113,4 +113,14 @@ impl BatteryInfo {
             false
         }
     }
+
+    /// Get current capacity in Wh (used by power estimation)
+    pub fn capacity_wh(&self) -> Option<f32> {
+        self.current_capacity_wh
+    }
+
+    /// Get charge percentage (alias for percentage)
+    pub fn charge_percent(&self) -> f32 {
+        self.percentage
+    }
 }

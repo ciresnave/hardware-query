@@ -117,6 +117,16 @@ mod tpu;
 mod usb;
 mod arm;
 mod fpga;
+mod power;
+mod virtualization;
+
+#[cfg(feature = "monitoring")]
+mod monitoring;
+
+// Simplified API modules
+pub mod simple;
+pub mod builder;
+pub mod presets;
 
 pub use battery::{BatteryInfo, BatteryStatus};
 pub use cpu::{CPUFeature, CPUInfo, CPUVendor};
@@ -128,8 +138,20 @@ pub use network::{NetworkInfo, NetworkType};
 pub use npu::{NPUInfo, NPUVendor, NPUType, NPUArchitecture};
 pub use pci::PCIDevice;
 pub use storage::{StorageInfo, StorageType};
-pub use thermal::{FanInfo, ThermalInfo, ThermalSensor};
+pub use thermal::{FanInfo, ThermalInfo, ThermalSensor, ThrottlingPrediction, CoolingRecommendation, ThrottlingSeverity};
 pub use tpu::{TPUInfo, TPUVendor, TPUArchitecture, TPUConnectionType};
 pub use usb::USBDevice;
 pub use arm::{ARMHardwareInfo, ARMSystemType, PowerInfo};
 pub use fpga::{FPGAInfo, FPGAVendor, FPGAFamily, FPGAInterface};
+pub use power::{PowerProfile, PowerState, ThrottlingRisk, PowerOptimization, OptimizationCategory};
+pub use virtualization::{VirtualizationInfo, VirtualizationType, ContainerRuntime, ResourceLimits};
+
+#[cfg(feature = "monitoring")]
+pub use monitoring::{HardwareMonitor, MonitoringConfig, MonitoringEvent, MonitoringStats, MonitoringCallback};
+
+// Simplified API exports - these are the recommended entry points for most users
+pub use simple::{SystemOverview, SimpleCPU, SimpleGPU, SimpleStorage, SystemHealth, 
+                 HealthStatus, TemperatureStatus, PowerStatus};
+pub use builder::{HardwareQueryBuilder, CustomHardwareInfo};
+pub use presets::{HardwarePresets, AIHardwareAssessment, GamingHardwareAssessment, 
+                  DeveloperHardwareAssessment, ServerHardwareAssessment};

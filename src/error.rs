@@ -41,6 +41,22 @@ pub enum HardwareQueryError {
     #[error("Invalid hardware configuration: {0}")]
     InvalidConfiguration(String),
 
+    /// Monitoring error
+    #[error("Monitoring error: {0}")]
+    MonitoringError(String),
+
+    /// Power management error
+    #[error("Power management error: {0}")]
+    PowerManagementError(String),
+
+    /// Virtualization detection error
+    #[error("Virtualization detection error: {0}")]
+    VirtualizationError(String),
+
+    /// Thermal management error
+    #[error("Thermal management error: {0}")]
+    ThermalError(String),
+
     /// Unknown error
     #[error("Unknown error: {0}")]
     Unknown(String),
@@ -69,6 +85,22 @@ impl HardwareQueryError {
 
     pub fn invalid_configuration(msg: impl Into<String>) -> Self {
         Self::InvalidConfiguration(msg.into())
+    }
+
+    pub fn monitoring_error(msg: impl Into<String>) -> Self {
+        Self::MonitoringError(msg.into())
+    }
+
+    pub fn power_management_error(msg: impl Into<String>) -> Self {
+        Self::PowerManagementError(msg.into())
+    }
+
+    pub fn virtualization_error(msg: impl Into<String>) -> Self {
+        Self::VirtualizationError(msg.into())
+    }
+
+    pub fn thermal_error(msg: impl Into<String>) -> Self {
+        Self::ThermalError(msg.into())
     }
 
     pub fn unknown(msg: impl Into<String>) -> Self {

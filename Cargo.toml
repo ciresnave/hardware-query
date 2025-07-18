@@ -1,11 +1,11 @@
 [package]
 name = "hardware-query"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 authors = ["Eric Evans <ciresnave@gmail.com>"]
-description = "Cross-platform Rust library for comprehensive hardware detection and system information querying"
-keywords = ["hardware", "system", "cpu", "gpu", "detection"]
-categories = ["api-bindings", "hardware-support", "os"]
+description = "Cross-platform Rust library for comprehensive hardware detection, real-time monitoring, power management, and AI/ML optimization"
+keywords = ["hardware", "system", "cpu", "gpu", "detection", "monitoring", "power", "thermal", "virtualization"]
+categories = ["api-bindings", "hardware-support", "os", "development-tools"]
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/ciresnave/hardware-query"
 homepage = "https://github.com/ciresnave/hardware-query"
@@ -22,6 +22,9 @@ thiserror = "2.0"
 num_cpus = "1.16"
 regex = "1.10"
 bytesize = "2.0"
+tokio = { version = "1.0", features = ["full"], optional = true }
+futures = { version = "0.3", optional = true }
+async-trait = { version = "0.1", optional = true }
 
 # Platform-specific dependencies
 [target.'cfg(windows)'.dependencies]
@@ -48,14 +51,14 @@ optional = true
 
 # Features
 [features]
-default = ["nvidia"]
+default = ["nvidia", "monitoring"]
 nvidia = ["nvml-wrapper"]
 amd = []  # ROCm detection via system calls
 intel = []
 gpu-all = ["nvidia", "amd", "intel"]
+monitoring = ["tokio", "futures", "async-trait"]
 
 [dev-dependencies]
-tokio = { version = "1.0", features = ["full"] }
 mockall = "0.13"
 criterion = "0.6"
 tempfile = "3.8"

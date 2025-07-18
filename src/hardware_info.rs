@@ -1,7 +1,7 @@
 use crate::{
     BatteryInfo, CPUInfo, GPUInfo, HardwareQueryError,
     MemoryInfo, NetworkInfo, NPUInfo, PCIDevice, Result, StorageInfo, ThermalInfo, TPUInfo, USBDevice,
-    ARMHardwareInfo, FPGAInfo,
+    ARMHardwareInfo, FPGAInfo, PowerProfile, VirtualizationInfo,
 };
 use serde::{Deserialize, Serialize};
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -38,6 +38,10 @@ pub struct HardwareInfo {
     pub pci_devices: Vec<PCIDevice>,
     /// USB devices
     pub usb_devices: Vec<USBDevice>,
+    /// Power consumption and efficiency profile
+    pub power_profile: Option<PowerProfile>,
+    /// Virtualization environment information
+    pub virtualization: VirtualizationInfo,
 }
 
 impl HardwareInfo {
@@ -63,6 +67,8 @@ impl HardwareInfo {
             thermal: ThermalInfo::query()?,
             pci_devices: PCIDevice::query_all()?,
             usb_devices: USBDevice::query_all()?,
+            power_profile: PowerProfile::query().ok(),
+            virtualization: VirtualizationInfo::detect()?,
         })
     }
 
@@ -131,6 +137,16 @@ impl HardwareInfo {
         &self.usb_devices
     }
 
+    /// Get power profile information (if available)
+    pub fn power_profile(&self) -> Option<&PowerProfile> {
+        self.power_profile.as_ref()
+    }
+
+    /// Get virtualization information
+    pub fn virtualization(&self) -> &VirtualizationInfo {
+        &self.virtualization
+    }
+
     /// Check if system is ARM-based
     pub fn is_arm_system(&self) -> bool {
         self.arm_hardware.is_some()
@@ -139,6 +155,21 @@ impl HardwareInfo {
     /// Check if system has FPGA accelerators
     pub fn has_fpgas(&self) -> bool {
         !self.fpgas.is_empty()
+    }
+
+    /// Check if running in a virtualized environment
+    pub fn is_virtualized(&self) -> bool {
+        self.virtualization.is_virtualized()
+    }
+
+    /// Check if running in a container
+    pub fn is_containerized(&self) -> bool {
+        self.virtualization.is_containerized()
+    }
+
+    /// Get estimated performance impact from virtualization (0.0 to 1.0)
+    pub fn virtualization_performance_impact(&self) -> f64 {
+        self.virtualization.get_performance_factor()
     }
 
     /// Get count of specialized accelerators (NPUs + TPUs + FPGAs)
