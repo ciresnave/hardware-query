@@ -1,48 +1,78 @@
 //! # Hardware Query
 //!
-//! A cross-platform Rust library for querying detailed system hardware information.
-//! Provides a unified interface to access CPU, GPU, memory, disk, network, and other
-//! hardware specifications across Windows, Linux, and macOS.
+//! **The easiest way to get hardware information in Rust.**
 //!
-//! ## Architecture
+//! This crate provides a simple, cross-platform API for hardware detection and system monitoring.
+//! Whether you need a quick system overview or detailed hardware analysis, there's an API tier for you.
 //!
-//! This library uses a modular architecture:
+//! ## Quick Start (1 line of code)
 //!
-//! - Core modules (`cpu`, `gpu`, `memory`, etc.) provide platform-agnostic interfaces
-//! - Platform-specific implementations in the `platform` module handle OS-specific detection
-//! - Features flags enable optional vendor-specific hardware detection
+//! Get a complete system overview with health status:
 //!
-//! ## Platform Support
+//! ```rust
+//! use hardware_query::SystemOverview;
+//! 
+//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
+//! let overview = SystemOverview::quick()?;
+//! println!("{}", overview);  // Formatted system summary with health status
+//! # Ok(())
+//! # }
+//! ```
 //!
-//! * **Windows**: Uses Windows Management Instrumentation (WMI) and native Windows APIs
-//! * **Linux**: Utilizes `/proc`, `/sys` filesystems and platform-specific commands
-//! * **macOS**: Leverages Core Foundation, IOKit and system commands
+//! ## Domain-Specific Presets (2-3 lines)
 //!
-//! ## Performance Considerations
+//! Get assessments tailored to your use case:
 //!
-//! Hardware detection operations can be relatively expensive, especially on first run.
-//! Consider caching the results when appropriate rather than querying repeatedly.
+//! ```rust
+//! use hardware_query::HardwarePresets;
 //!
-//! ## Thread Safety
+//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
+//! // For AI/ML applications
+//! let ai_assessment = HardwarePresets::ai_assessment()?;
+//! println!("AI Score: {}/100", ai_assessment.ai_score);
+//! println!("Supported Frameworks: {:?}", ai_assessment.frameworks);
 //!
-//! All public types in this library are `Send` and `Sync` unless explicitly documented otherwise.
-//! The library is designed to be used safely in multithreaded environments.
+//! // For gaming applications  
+//! let gaming_assessment = HardwarePresets::gaming_assessment()?;
+//! println!("Gaming Score: {}/100", gaming_assessment.gaming_score);
+//! println!("Recommended Settings: {}", gaming_assessment.recommended_settings);
 //!
-//! ## Features
+//! // For development environments
+//! let dev_assessment = HardwarePresets::developer_assessment()?;
+//! println!("Build Performance: {:?}", dev_assessment.build_performance);
+//! # Ok(())
+//! # }
+//! ```
 //!
-//! - Cross-platform hardware detection (Windows, Linux, macOS)
-//! - Detailed CPU information (cores, threads, cache, features)
-//! - GPU detection and capabilities (CUDA, ROCm, DirectML support)
-//! - Memory configuration and status
-//! - Storage device enumeration and properties
-//! - Network interface detection and capabilities
-//! - Hardware acceleration support detection
-//! - Battery status and health monitoring
-//! - Thermal sensors and fan control (where available)
-//! - PCI/USB device enumeration
-//! - Serializable hardware information
+//! ## Custom Queries (3-5 lines)
 //!
-//! ## Example
+//! Build exactly the hardware query you need:
+//!
+//! ```rust
+//! use hardware_query::HardwareQueryBuilder;
+//!
+//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
+//! // Get basic system info
+//! let basic_info = HardwareQueryBuilder::new()
+//!     .with_basic()
+//!     .cpu_and_memory()?;
+//!
+//! // Get AI-focused hardware info
+//! let ai_info = HardwareQueryBuilder::new()
+//!     .with_ai_focused()
+//!     .gpu_and_accelerators()?;
+//!
+//! // Get everything for system monitoring
+//! let monitoring_info = HardwareQueryBuilder::new()
+//!     .with_monitoring()
+//!     .all_hardware()?;
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! ## Complete Hardware Analysis (Advanced)
+//!
+//! For detailed hardware analysis and custom processing:
 //!
 //! ```rust
 //! use hardware_query::HardwareInfo;
@@ -51,55 +81,102 @@
 //! // Get complete system information
 //! let hw_info = HardwareInfo::query()?;
 //!
-//! // Access CPU information
+//! // Access detailed CPU information
 //! let cpu = hw_info.cpu();
-//! println!("CPU: {} {} with {} cores, {} threads",
+//! println!("CPU: {} {} - {} cores, {} threads",
 //!     cpu.vendor(),
 //!     cpu.model_name(),
 //!     cpu.physical_cores(),
 //!     cpu.logical_cores()
 //! );
 //!
-//! // Check for specific CPU features
-//! if cpu.has_feature("avx2") {
-//!     println!("CPU supports AVX2 instructions");
+//! // Check specific CPU features for optimization
+//! if cpu.has_feature("avx2") && cpu.has_feature("fma") {
+//!     println!("CPU optimized for SIMD operations");
 //! }
 //!
-//! // Get GPU information
-//! for (i, gpu) in hw_info.gpus().iter().enumerate() {
-//!     println!("GPU {}: {} {} with {} GB VRAM",
-//!         i + 1,
-//!         gpu.vendor(),
-//!         gpu.model_name(),
-//!         gpu.memory_gb()
+//! // Analyze GPU capabilities for AI workloads
+//! for gpu in hw_info.gpus() {
+//!     println!("GPU: {} {} - {} GB VRAM", 
+//!         gpu.vendor(), gpu.model_name(), gpu.memory_gb());
+//!     
+//!     if gpu.supports_cuda() {
+//!         println!("  CUDA support available");
+//!     }
+//!     if gpu.supports_opencl() {
+//!         println!("  OpenCL support available");
+//!     }
+//! }
+//!
+//! // Check for specialized AI hardware
+//! if !hw_info.npus().is_empty() {
+//!     println!("AI accelerators found: {} NPUs", hw_info.npus().len());
+//! }
+//!
+//! // Memory analysis for performance optimization
+//! let memory = hw_info.memory();
+//! println!("Memory: {} GB total, {} GB available",
+//!     memory.total_gb(),
+//!     memory.available_gb()
+//! );
+//!
+//! // Storage performance characteristics
+//! for storage in hw_info.storage() {
+//!     println!("Storage: {} - {} GB ({})",
+//!         storage.model(),
+//!         storage.capacity_gb(),
+//!         if storage.is_ssd() { "SSD" } else { "HDD" }
 //!     );
 //! }
-//!
-//! // Check specialized hardware
-//! if !hw_info.npus().is_empty() {
-//!     println!("NPUs detected: {} units", hw_info.npus().len());
-//! }
-//!
-//! if !hw_info.tpus().is_empty() {
-//!     println!("TPUs detected: {} units", hw_info.tpus().len());
-//! }
-//!
-//! // Check ARM-specific hardware (Raspberry Pi, Jetson, etc.)
-//! if let Some(arm) = hw_info.arm_hardware() {
-//!     println!("ARM System: {}", arm.system_type);
-//! }
-//!
-//! // Check FPGA hardware
-//! if !hw_info.fpgas().is_empty() {
-//!     println!("FPGAs detected: {} units", hw_info.fpgas().len());
-//! }
-//!
-//! // Get system summary
-//! let summary = hw_info.summary();
-//! println!("System Summary:\n{}", summary);
 //! # Ok(())
 //! # }
 //! ```
+//!
+//! ## Monitoring and Real-time Updates
+//!
+//! For applications that need continuous hardware monitoring:
+//!
+//! ```rust,no_run
+//! #[cfg(feature = "monitoring")]
+//! use hardware_query::{HardwareMonitor, MonitoringConfig};
+//!
+//! # #[cfg(feature = "monitoring")]
+//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
+//! let config = MonitoringConfig::new()
+//!     .with_cpu_monitoring(true)
+//!     .with_thermal_monitoring(true)
+//!     .with_interval_ms(1000);
+//!
+//! let mut monitor = HardwareMonitor::new(config);
+//!
+//! monitor.start_monitoring(|event| {
+//!     match event {
+//!         hardware_query::MonitoringEvent::TemperatureAlert { component, temp } => {
+//!             println!("Warning: {} temperature: {}°C", component, temp);
+//!         }
+//!         hardware_query::MonitoringEvent::CpuUsageHigh { usage } => {
+//!             println!("High CPU usage: {}%", usage);
+//!         }
+//!         _ => {}
+//!     }
+//! })?;
+//! # Ok(())
+//! # }
+//! ```
+//!
+//! ## Feature Flags
+//!
+//! - **Default**: Basic hardware detection (CPU, Memory, GPU, Storage)
+//! - **`monitoring`**: Real-time monitoring capabilities, thermal sensors, power management
+//! - **`serde`**: Serialization/deserialization support (automatically enabled)
+//!
+//! ## Platform Support
+//!
+//! - **Windows**: Native WMI and Windows API support
+//! - **Linux**: Comprehensive `/proc`, `/sys` filesystem support  
+//! - **macOS**: IOKit and system framework integration
+//!
+//! All APIs work consistently across platforms, with graceful degradation when specific hardware isn't available.
 
 mod battery;
 mod cpu;

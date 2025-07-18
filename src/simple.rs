@@ -1,8 +1,23 @@
-//! Simplified hardware query interface
+//! Simplified hardware query interface - **Start here for easy hardware detection**
 //!
-//! This module provides a simplified API for common hardware queries,
-//! making it easy for developers to get started without dealing with
-//! the full complexity of the hardware information structures.
+//! This module provides the easiest way to get hardware information without complexity.
+//! Perfect for getting started or when you need a quick system overview.
+//!
+//! ## Quick Examples
+//!
+//! ```rust
+//! use hardware_query::SystemOverview;
+//!
+//! // Get everything in one line
+//! let overview = SystemOverview::quick()?;
+//! println!("{}", overview);  // Pretty-printed system summary
+//!
+//! // Access specific information
+//! println!("CPU: {} cores", overview.cpu.cores);
+//! println!("Memory: {:.1} GB", overview.memory_gb);
+//! println!("Health: {:?}", overview.health.overall_status);
+//! # Ok::<(), Box<dyn std::error::Error>>(())
+//! ```
 
 use crate::{HardwareInfo, Result};
 use serde::{Deserialize, Serialize};
@@ -124,6 +139,38 @@ pub enum PowerStatus {
 /// Simplified hardware query functions
 impl SystemOverview {
     /// Get a quick system overview with the most important information
+    /// 
+    /// This is the fastest way to get a comprehensive system summary. Perfect for:
+    /// - System diagnostics and health checks
+    /// - Application compatibility verification  
+    /// - Performance baseline establishment
+    /// - Environment detection (native/container/VM)
+    /// 
+    /// # Example
+    /// 
+    /// ```rust
+    /// use hardware_query::SystemOverview;
+    /// 
+    /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+    /// let overview = SystemOverview::quick()?;
+    /// 
+    /// // Get formatted system summary
+    /// println!("{}", overview);
+    /// 
+    /// // Access specific components
+    /// println!("CPU: {} cores", overview.cpu.cores);
+    /// println!("Memory: {:.1} GB", overview.memory_gb);
+    /// 
+    /// if let Some(gpu) = &overview.gpu {
+    ///     println!("GPU: {} ({:.1} GB VRAM)", gpu.name, gpu.vram_gb);
+    /// }
+    /// 
+    /// // Check system health
+    /// println!("System Health: {:?}", overview.health.overall_status);
+    /// println!("Performance Score: {}/100", overview.performance_score);
+    /// # Ok(())
+    /// # }
+    /// ```
     pub fn quick() -> Result<Self> {
         let hw_info = HardwareInfo::query()?;
         Self::from_hardware_info(hw_info)
