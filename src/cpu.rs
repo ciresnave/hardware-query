@@ -1,6 +1,6 @@
 use crate::{HardwareQueryError, Result};
 use serde::{Deserialize, Serialize};
-use std::fmt;
+use std::{fmt, fs};
 use sysinfo::System;
 
 /// CPU vendor information
@@ -471,7 +471,7 @@ impl CPUInfo {
     }
 
     fn detect_vulnerabilities() -> Result<Vec<String>> {
-        let vulnerabilities = Vec::new();
+        let mut vulnerabilities = Vec::new();
 
         #[cfg(target_os = "linux")]
         {
