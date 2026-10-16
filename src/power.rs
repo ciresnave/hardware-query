@@ -168,7 +168,7 @@ impl PowerProfile {
         {
             if power_draw > 0.0 {
                 // Calculate remaining capacity in wh
-                let remaining_wh = capacity_wh * (battery.charge_percent() as f32 / 100.0);
+                let remaining_wh = capacity_wh * (battery.charge_percent() / 100.0);
 
                 // Estimate hours remaining
                 let hours_remaining = remaining_wh / power_draw;

@@ -327,6 +327,7 @@ impl NPUInfo {
     }
 
     fn detect_intel_xdna() -> Result<Vec<NPUInfo>> {
+        #[cfg_attr(not(target_os = "windows"), allow(unused_mut))]
         let mut npus = Vec::new();
 
         // Intel XDNA (Meteor Lake and newer integrated NPU)
@@ -407,6 +408,7 @@ impl NPUInfo {
         None
     }
 
+    #[cfg(target_os = "windows")]
     fn get_intel_npu_driver_version() -> Option<String> {
         // Windows: Check registry or device manager for NPU driver version
         None // Placeholder - would need Windows registry access

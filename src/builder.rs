@@ -26,7 +26,6 @@ pub struct HardwareQueryBuilder {
     include_pci: bool,
     include_usb: bool,
     include_virtualization: bool,
-    include_capabilities: bool,
 
     #[cfg(feature = "monitoring")]
     include_power: bool,
@@ -71,7 +70,6 @@ impl HardwareQueryBuilder {
             include_pci: false,
             include_usb: false,
             include_virtualization: false,
-            include_capabilities: false,
 
             #[cfg(feature = "monitoring")]
             include_power: false,
@@ -362,6 +360,12 @@ impl HardwareQueryBuilder {
     pub fn quick_query(self) -> Result<CustomHardwareInfo> {
         // For quick queries, we can optimize by avoiding expensive operations
         self.with_basic().query()
+    }
+}
+
+impl Default for HardwareQueryBuilder {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

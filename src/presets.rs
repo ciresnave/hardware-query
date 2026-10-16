@@ -330,7 +330,7 @@ impl HardwarePresets {
             } else {
                 CompatibilityLevel::Good
             },
-            performance_estimate: if overview.gpu.as_ref().map_or(false, |g| g.ai_capable) {
+            performance_estimate: if overview.gpu.as_ref().is_some_and(|g| g.ai_capable) {
                 PerformanceLevel::Excellent
             } else {
                 PerformanceLevel::Fair
@@ -347,7 +347,7 @@ impl HardwarePresets {
             } else {
                 CompatibilityLevel::Good
             },
-            performance_estimate: if overview.gpu.as_ref().map_or(false, |g| g.ai_capable) {
+            performance_estimate: if overview.gpu.as_ref().is_some_and(|g| g.ai_capable) {
                 PerformanceLevel::Excellent
             } else {
                 PerformanceLevel::Fair
@@ -416,7 +416,7 @@ impl HardwarePresets {
 
     fn estimate_ai_performance(overview: &SystemOverview) -> AIPerformanceEstimate {
         let has_gpu = overview.gpu.is_some();
-        let gpu_ai_capable = overview.gpu.as_ref().map_or(false, |g| g.ai_capable);
+        let gpu_ai_capable = overview.gpu.as_ref().is_some_and(|g| g.ai_capable);
         let sufficient_memory = overview.memory_gb >= 16.0;
 
         AIPerformanceEstimate {

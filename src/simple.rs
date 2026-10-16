@@ -15,7 +15,7 @@
 //! // Access specific information
 //! println!("CPU: {} cores", overview.cpu.cores);
 //! println!("Memory: {:.1} GB", overview.memory_gb);
-//! println!("Health: {:?}", overview.health.overall_status);
+//! println!("Health: {:?}", overview.health.status);
 //! # Ok::<(), Box<dyn std::error::Error>>(())
 //! ```
 
@@ -166,7 +166,7 @@ impl SystemOverview {
     /// }
     ///
     /// // Check system health
-    /// println!("System Health: {:?}", overview.health.overall_status);
+    /// println!("System Health: {:?}", overview.health.status);
     /// println!("Performance Score: {}/100", overview.performance_score);
     /// # Ok(())
     /// # }
@@ -220,7 +220,7 @@ impl SystemOverview {
     pub fn is_ai_ready(&self) -> bool {
         // Basic AI readiness check
         self.cpu.ai_capable
-            || self.gpu.as_ref().map_or(false, |gpu| gpu.ai_capable)
+            || self.gpu.as_ref().is_some_and(|gpu| gpu.ai_capable)
             || self.memory_gb >= 8.0
     }
 
@@ -490,6 +490,26 @@ impl SystemOverview {
 }
 
 // Display implementations for better debugging
+impl std::fmt::Display for SystemOverview {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "CPU: {} ({} cores)", self.cpu.name, self.cpu.cores)?;
+        writeln!(f, "Memory: {:.1} GB", self.memory_gb)?;
+        if let Some(gpu) = &self.gpu {
+            writeln!(f, "GPU: {} ({:.1} GB VRAM)", gpu.name, gpu.vram_gb)?;
+        } else {
+            writeln!(f, "GPU: None (integrated graphics)")?;
+        }
+        writeln!(
+            f,
+            "Storage: {:.0} GB {} (Health: {})",
+            self.storage.total_gb, self.storage.drive_type, self.storage.health
+        )?;
+        writeln!(f, "Environment: {}", self.environment)?;
+        writeln!(f, "Performance Score: {}/100", self.performance_score)?;
+        write!(f, "Health: {}", self.health.status)
+    }
+}
+
 impl std::fmt::Display for HealthStatus {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {

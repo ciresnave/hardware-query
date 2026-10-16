@@ -46,6 +46,10 @@ impl Default for MonitoringConfig {
 
 /// Hardware monitoring event
 #[derive(Debug, Clone, Serialize, Deserialize)]
+// Boxing MetricsUpdate's fields to shrink the enum would change the public
+// field types (Option<T> -> Box<Option<T>>), a breaking change this isn't
+// the release for.
+#[allow(clippy::large_enum_variant)]
 pub enum MonitoringEvent {
     /// Thermal threshold exceeded
     ThermalAlert {
@@ -118,6 +122,7 @@ pub struct MonitoringStats {
 
 /// Hardware monitoring callback trait
 #[async_trait]
+#[allow(clippy::double_must_use)] // false positive: async_trait's generated Future is already must_use
 pub trait MonitoringCallback: Send + Sync {
     async fn on_event(&self, event: &MonitoringEvent);
 }

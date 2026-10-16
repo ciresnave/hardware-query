@@ -221,6 +221,7 @@ pub struct GPUPassthroughInfo {
 
 /// Type of GPU passthrough
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[allow(clippy::upper_case_acronyms)] // SR-IOV is the industry name, not an invented one
 pub enum GPUPassthroughType {
     /// Full GPU passthrough
     Full,
@@ -249,6 +250,7 @@ pub struct PassthroughDevice {
 
 /// Security features enabled in virtualization
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[allow(clippy::upper_case_acronyms)] // these are all industry acronyms (IOMMU, CFI, ASLR, ...)
 pub enum SecurityFeature {
     /// Secure Boot enabled
     SecureBoot,

@@ -4,10 +4,6 @@ use serde::{Deserialize, Serialize};
 #[cfg(feature = "nvidia")]
 use nvml_wrapper::Nvml;
 
-// ROCm detection will be done via system calls
-#[cfg(target_os = "linux")]
-use std::process::Command;
-
 #[cfg(target_os = "windows")]
 use wmi::{COMLibrary, WMIConnection};
 
@@ -587,6 +583,9 @@ impl GPUInfo {
     }
 
     /// Classify GPU type based on model name and characteristics
+    ///
+    /// Only called from the Windows WMI detection path above.
+    #[cfg(target_os = "windows")]
     fn classify_gpu_type(name: &str, vendor: &GPUVendor, adapter_ram: u64) -> GPUType {
         let name_lower = name.to_lowercase();
 
@@ -610,6 +609,7 @@ impl GPUInfo {
     }
 
     /// Check if GPU is a datacenter model
+    #[cfg(target_os = "windows")]
     fn is_datacenter_gpu(name: &str, vendor: &GPUVendor) -> bool {
         match vendor {
             GPUVendor::NVIDIA => {
@@ -649,6 +649,7 @@ impl GPUInfo {
     }
 
     /// Check if GPU is a workstation model
+    #[cfg(target_os = "windows")]
     fn is_workstation_gpu(name: &str, vendor: &GPUVendor) -> bool {
         match vendor {
             GPUVendor::NVIDIA => {
@@ -684,6 +685,7 @@ impl GPUInfo {
     }
 
     /// Check if GPU is integrated
+    #[cfg(target_os = "windows")]
     fn is_integrated_gpu(name: &str, vendor: &GPUVendor, adapter_ram: u64) -> bool {
         // Standard integrated GPU indicators
         let integrated_keywords = name.contains("integrated")
