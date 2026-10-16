@@ -204,6 +204,13 @@ fn main() -> Result<()> {
         }
     }
 
+    println!();
+
+    // 9. Error Handling
+    println!("9. Error Handling:");
+    demonstrate_error_handling();
+    println!();
+
     println!("\n=== Summary ===");
     println!("The simplified API provides three main entry points:");
     println!("1. SystemOverview::quick() - Fastest overview of your system");

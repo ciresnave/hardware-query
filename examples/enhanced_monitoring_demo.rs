@@ -268,9 +268,11 @@ async fn demo_monitoring() -> Result<()> {
 
     println!("   Starting 10-second monitoring session...");
 
-    let mut config = MonitoringConfig::default();
-    config.update_interval = Duration::from_secs(2);
-    config.thermal_threshold = 70.0; // Lower threshold for demo
+    let config = MonitoringConfig {
+        update_interval: Duration::from_secs(2),
+        thermal_threshold: 70.0, // Lower threshold for demo
+        ..Default::default()
+    };
 
     let monitor = HardwareMonitor::with_config(config);
 

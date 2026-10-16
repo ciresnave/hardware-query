@@ -35,11 +35,11 @@
 //! // For gaming applications  
 //! let gaming_assessment = HardwarePresets::gaming_assessment()?;
 //! println!("Gaming Score: {}/100", gaming_assessment.gaming_score);
-//! println!("Recommended Settings: {}", gaming_assessment.recommended_settings);
+//! println!("Recommended Settings: {:?}", gaming_assessment.recommended_settings);
 //!
 //! // For development environments
 //! let dev_assessment = HardwarePresets::developer_assessment()?;
-//! println!("Build Performance: {:?}", dev_assessment.build_performance);
+//! println!("Dev Score: {}/100", dev_assessment.dev_score);
 //! # Ok(())
 //! # }
 //! ```
@@ -55,17 +55,17 @@
 //! // Get basic system info
 //! let basic_info = HardwareQueryBuilder::new()
 //!     .with_basic()
-//!     .cpu_and_memory()?;
+//!     .query()?;
 //!
 //! // Get AI-focused hardware info
 //! let ai_info = HardwareQueryBuilder::new()
 //!     .with_ai_focused()
-//!     .gpu_and_accelerators()?;
+//!     .query()?;
 //!
 //! // Get everything for system monitoring
 //! let monitoring_info = HardwareQueryBuilder::new()
-//!     .with_monitoring()
-//!     .all_hardware()?;
+//!     .with_all()
+//!     .query()?;
 //! # Ok(())
 //! # }
 //! ```
@@ -121,11 +121,11 @@
 //! );
 //!
 //! // Storage performance characteristics
-//! for storage in hw_info.storage() {
+//! for storage in hw_info.storage_devices() {
 //!     println!("Storage: {} - {} GB ({})",
 //!         storage.model(),
 //!         storage.capacity_gb(),
-//!         if storage.is_ssd() { "SSD" } else { "HDD" }
+//!         storage.drive_type()
 //!     );
 //! }
 //! # Ok(())
@@ -137,31 +137,37 @@
 //! For applications that need continuous hardware monitoring:
 //!
 //! ```rust,no_run
-//! #[cfg(feature = "monitoring")]
-//! use hardware_query::{HardwareMonitor, MonitoringConfig};
+//! # #[cfg(feature = "monitoring")]
+//! use hardware_query::{HardwareMonitor, MonitoringConfig, MonitoringEvent};
 //!
 //! # #[cfg(feature = "monitoring")]
-//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
-//! let config = MonitoringConfig::new()
-//!     .with_cpu_monitoring(true)
-//!     .with_thermal_monitoring(true)
-//!     .with_interval_ms(1000);
+//! # #[tokio::main]
+//! # async fn main() -> Result<(), Box<dyn std::error::Error>> {
+//! let config = MonitoringConfig {
+//!     update_interval: std::time::Duration::from_secs(1),
+//!     thermal_threshold: 80.0,
+//!     ..Default::default()
+//! };
 //!
-//! let mut monitor = HardwareMonitor::new(config);
+//! let monitor = HardwareMonitor::with_config(config);
 //!
-//! monitor.start_monitoring(|event| {
+//! monitor.on_event(|event| {
 //!     match event {
-//!         hardware_query::MonitoringEvent::TemperatureAlert { component, temp } => {
-//!             println!("Warning: {} temperature: {}°C", component, temp);
+//!         MonitoringEvent::ThermalAlert { sensor_name, temperature, .. } => {
+//!             println!("Warning: {} temperature: {}°C", sensor_name, temperature);
 //!         }
-//!         hardware_query::MonitoringEvent::CpuUsageHigh { usage } => {
-//!             println!("High CPU usage: {}%", usage);
+//!         MonitoringEvent::PowerAlert { current_power, .. } => {
+//!             println!("High power draw: {}W", current_power);
 //!         }
 //!         _ => {}
 //!     }
-//! })?;
+//! }).await;
+//!
+//! monitor.start_monitoring().await?;
 //! # Ok(())
 //! # }
+//! # #[cfg(not(feature = "monitoring"))]
+//! # fn main() {}
 //! ```
 //!
 //! ## Feature Flags
