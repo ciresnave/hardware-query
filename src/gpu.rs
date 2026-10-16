@@ -150,10 +150,10 @@ impl GPUInfo {
             // Merge NVIDIA-specific details with WMI results
             for nvidia_gpu in nvidia_gpus {
                 // Check if we already have this GPU from WMI
-                if let Some(existing) = gpus.iter_mut().find(|g| 
-                    g.vendor == GPUVendor::NVIDIA && 
-                    g.model_name.contains("RTX") == nvidia_gpu.model_name.contains("RTX")
-                ) {
+                if let Some(existing) = gpus.iter_mut().find(|g| {
+                    g.vendor == GPUVendor::NVIDIA
+                        && g.model_name.contains("RTX") == nvidia_gpu.model_name.contains("RTX")
+                }) {
                     // Update with more detailed NVIDIA information
                     existing.compute_capabilities.cuda = nvidia_gpu.compute_capabilities.cuda;
                     existing.usage_percent = nvidia_gpu.usage_percent;
@@ -172,7 +172,10 @@ impl GPUInfo {
         if let Ok(amd_gpus) = Self::query_amd_gpus() {
             // Similar merge logic for AMD GPUs
             for amd_gpu in amd_gpus {
-                if !gpus.iter().any(|g| g.vendor == GPUVendor::AMD && g.model_name == amd_gpu.model_name) {
+                if !gpus
+                    .iter()
+                    .any(|g| g.vendor == GPUVendor::AMD && g.model_name == amd_gpu.model_name)
+                {
                     gpus.push(amd_gpu);
                 }
             }
@@ -181,7 +184,10 @@ impl GPUInfo {
         if let Ok(intel_gpus) = Self::query_intel_gpus() {
             // Similar merge logic for Intel GPUs
             for intel_gpu in intel_gpus {
-                if !gpus.iter().any(|g| g.vendor == GPUVendor::Intel && g.model_name == intel_gpu.model_name) {
+                if !gpus
+                    .iter()
+                    .any(|g| g.vendor == GPUVendor::Intel && g.model_name == intel_gpu.model_name)
+                {
                     gpus.push(intel_gpu);
                 }
             }
@@ -453,7 +459,7 @@ impl GPUInfo {
         #[cfg(target_os = "windows")]
         {
             use std::collections::HashMap;
-            use wmi::{COMLibrary, WMIConnection, Variant};
+            use wmi::{COMLibrary, Variant, WMIConnection};
 
             let com_con = COMLibrary::new()?;
             let wmi_con = WMIConnection::new(com_con)?;
@@ -464,14 +470,16 @@ impl GPUInfo {
             let mut gpus = Vec::new();
 
             for gpu in results {
-                let name = gpu.get("Name")
+                let name = gpu
+                    .get("Name")
                     .and_then(|v| match v {
                         Variant::String(s) => Some(s.clone()),
                         _ => None,
                     })
                     .unwrap_or_else(|| "Unknown GPU".to_string());
 
-                let adapter_ram = gpu.get("AdapterRAM")
+                let adapter_ram = gpu
+                    .get("AdapterRAM")
                     .and_then(|v| match v {
                         Variant::UI4(val) => Some(*val as u64),
                         Variant::UI8(val) => Some(*val),
@@ -479,23 +487,28 @@ impl GPUInfo {
                     })
                     .unwrap_or(0);
 
-                let device_id = gpu.get("PNPDeviceID")
+                let device_id = gpu
+                    .get("PNPDeviceID")
                     .and_then(|v| match v {
                         Variant::String(s) => Some(s.clone()),
                         _ => None,
                     })
                     .unwrap_or_else(|| "".to_string());
 
-                let driver_version = gpu.get("DriverVersion")
-                    .and_then(|v| match v {
-                        Variant::String(s) => Some(s.clone()),
-                        _ => None,
-                    });
+                let driver_version = gpu.get("DriverVersion").and_then(|v| match v {
+                    Variant::String(s) => Some(s.clone()),
+                    _ => None,
+                });
 
                 // Determine vendor from name or device ID
-                let vendor = if name.to_lowercase().contains("nvidia") || device_id.contains("VEN_10DE") {
+                let vendor = if name.to_lowercase().contains("nvidia")
+                    || device_id.contains("VEN_10DE")
+                {
                     GPUVendor::NVIDIA
-                } else if name.to_lowercase().contains("amd") || name.to_lowercase().contains("radeon") || device_id.contains("VEN_1002") {
+                } else if name.to_lowercase().contains("amd")
+                    || name.to_lowercase().contains("radeon")
+                    || device_id.contains("VEN_1002")
+                {
                     GPUVendor::AMD
                 } else if name.to_lowercase().contains("intel") || device_id.contains("VEN_8086") {
                     GPUVendor::Intel
@@ -512,20 +525,24 @@ impl GPUInfo {
                 } else {
                     // Fallback estimates based on GPU type and vendor
                     match (&vendor, &gpu_type) {
-                        (GPUVendor::NVIDIA, GPUType::Datacenter) => 32768,    // 32GB for datacenter (A100, H100)
-                        (GPUVendor::NVIDIA, GPUType::Workstation) => 16384,   // 16GB for workstation (RTX A6000)
-                        (GPUVendor::NVIDIA, GPUType::Discrete) => 8192,       // 8GB for consumer RTX
-                        (GPUVendor::AMD, GPUType::Datacenter) => 32768,       // 32GB for Instinct
-                        (GPUVendor::AMD, GPUType::Workstation) => 16384,      // 16GB for Radeon Pro
-                        (GPUVendor::AMD, GPUType::Discrete) => 8192,          // 8GB for discrete AMD
-                        (_, GPUType::Integrated) => 512,                      // 512MB for integrated
-                        _ => 4096,                                            // Default 4GB
+                        (GPUVendor::NVIDIA, GPUType::Datacenter) => 32768, // 32GB for datacenter (A100, H100)
+                        (GPUVendor::NVIDIA, GPUType::Workstation) => 16384, // 16GB for workstation (RTX A6000)
+                        (GPUVendor::NVIDIA, GPUType::Discrete) => 8192,     // 8GB for consumer RTX
+                        (GPUVendor::AMD, GPUType::Datacenter) => 32768,     // 32GB for Instinct
+                        (GPUVendor::AMD, GPUType::Workstation) => 16384,    // 16GB for Radeon Pro
+                        (GPUVendor::AMD, GPUType::Discrete) => 8192,        // 8GB for discrete AMD
+                        (_, GPUType::Integrated) => 512,                    // 512MB for integrated
+                        _ => 4096,                                          // Default 4GB
                     }
                 };
 
                 // Set compute capabilities based on vendor
                 let compute_capabilities = ComputeCapabilities {
-                    cuda: if vendor == GPUVendor::NVIDIA { Some("Unknown".to_string()) } else { None },
+                    cuda: if vendor == GPUVendor::NVIDIA {
+                        Some("Unknown".to_string())
+                    } else {
+                        None
+                    },
                     rocm: vendor == GPUVendor::AMD && gpu_type == GPUType::Discrete,
                     directml: true, // DirectML is available on Windows for most modern GPUs
                     opencl: true,   // Most modern GPUs support OpenCL
@@ -572,65 +589,65 @@ impl GPUInfo {
     /// Classify GPU type based on model name and characteristics
     fn classify_gpu_type(name: &str, vendor: &GPUVendor, adapter_ram: u64) -> GPUType {
         let name_lower = name.to_lowercase();
-        
+
         // Check for datacenter GPUs first
         if Self::is_datacenter_gpu(&name_lower, vendor) {
             return GPUType::Datacenter;
         }
-        
+
         // Check for workstation GPUs
         if Self::is_workstation_gpu(&name_lower, vendor) {
             return GPUType::Workstation;
         }
-        
+
         // Check for integrated GPUs
         if Self::is_integrated_gpu(&name_lower, vendor, adapter_ram) {
             return GPUType::Integrated;
         }
-        
+
         // Default to discrete for remaining GPUs
         GPUType::Discrete
     }
-    
+
     /// Check if GPU is a datacenter model
     fn is_datacenter_gpu(name: &str, vendor: &GPUVendor) -> bool {
         match vendor {
             GPUVendor::NVIDIA => {
-                name.contains("tesla") ||
-                name.contains("a100") ||
-                name.contains("h100") ||
-                name.contains("h200") ||
-                name.contains("v100") ||
-                name.contains("p100") ||
-                name.contains("k80") ||
-                name.contains("k40") ||
-                name.contains("l40") ||
-                name.contains("l4") ||
-                name.contains("data center") ||
-                name.contains("datacenter") ||
-                name.contains("dgx") ||
-                name.contains("hgx")
-            },
+                name.contains("tesla")
+                    || name.contains("a100")
+                    || name.contains("h100")
+                    || name.contains("h200")
+                    || name.contains("v100")
+                    || name.contains("p100")
+                    || name.contains("k80")
+                    || name.contains("k40")
+                    || name.contains("l40")
+                    || name.contains("l4")
+                    || name.contains("data center")
+                    || name.contains("datacenter")
+                    || name.contains("dgx")
+                    || name.contains("hgx")
+            }
             GPUVendor::AMD => {
-                name.contains("instinct") ||
-                name.contains("mi50") ||
-                name.contains("mi100") ||
-                name.contains("mi200") ||
-                name.contains("mi250") ||
-                name.contains("mi300") ||
-                name.contains("cdna") ||
-                name.contains("datacenter") ||
-                name.contains("server")
-            },
+                name.contains("instinct")
+                    || name.contains("mi50")
+                    || name.contains("mi100")
+                    || name.contains("mi200")
+                    || name.contains("mi250")
+                    || name.contains("mi300")
+                    || name.contains("cdna")
+                    || name.contains("datacenter")
+                    || name.contains("server")
+            }
             GPUVendor::Intel => {
-                name.contains("ponte vecchio") ||
-                name.contains("data center") ||
-                name.contains("max") && (name.contains("1100") || name.contains("1550"))
-            },
+                name.contains("ponte vecchio")
+                    || name.contains("data center")
+                    || name.contains("max") && (name.contains("1100") || name.contains("1550"))
+            }
             _ => false,
         }
     }
-    
+
     /// Check if GPU is a workstation model
     fn is_workstation_gpu(name: &str, vendor: &GPUVendor) -> bool {
         match vendor {
@@ -647,7 +664,7 @@ impl GPUInfo {
                 name.contains("t400") ||
                 name.contains("t600") ||
                 (name.contains("professional") && !name.contains("geforce"))
-            },
+            }
             GPUVendor::AMD => {
                 name.contains("radeon pro") ||
                 name.contains("firepro") ||
@@ -656,31 +673,31 @@ impl GPUInfo {
                 name.contains("w7") ||           // W7000 series
                 name.contains("workstation") ||
                 name.contains("professional")
-            },
+            }
             GPUVendor::Intel => {
-                name.contains("pro") ||
-                name.contains("workstation") ||
-                name.contains("professional")
-            },
+                name.contains("pro")
+                    || name.contains("workstation")
+                    || name.contains("professional")
+            }
             _ => false,
         }
     }
-    
+
     /// Check if GPU is integrated
     fn is_integrated_gpu(name: &str, vendor: &GPUVendor, adapter_ram: u64) -> bool {
         // Standard integrated GPU indicators
-        let integrated_keywords = name.contains("integrated") ||
-                                 name.contains("uhd") ||
-                                 name.contains("iris") ||
-                                 name.contains("vega") && name.contains("graphics") ||
-                                 name.contains("radeon graphics") ||
-                                 name.contains("apu") ||
-                                 name.contains("mobile") && !name.contains("rtx") ||
-                                 name.contains("embedded");
-        
+        let integrated_keywords = name.contains("integrated")
+            || name.contains("uhd")
+            || name.contains("iris")
+            || name.contains("vega") && name.contains("graphics")
+            || name.contains("radeon graphics")
+            || name.contains("apu")
+            || name.contains("mobile") && !name.contains("rtx")
+            || name.contains("embedded");
+
         // Memory-based heuristic (integrated GPUs typically have < 2GB dedicated VRAM)
         let low_memory = vendor == &GPUVendor::AMD && adapter_ram < 2_000_000_000;
-        
+
         integrated_keywords || low_memory
     }
 }

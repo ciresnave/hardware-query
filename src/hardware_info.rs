@@ -1,11 +1,11 @@
 use crate::{
-    BatteryInfo, CPUInfo, GPUInfo, HardwareQueryError,
-    MemoryInfo, NetworkInfo, NPUInfo, PCIDevice, Result, StorageInfo, ThermalInfo, TPUInfo, USBDevice,
-    ARMHardwareInfo, FPGAInfo, PowerProfile, VirtualizationInfo,
+    ARMHardwareInfo, BatteryInfo, CPUInfo, FPGAInfo, GPUInfo, HardwareQueryError, MemoryInfo,
+    NPUInfo, NetworkInfo, PCIDevice, PowerProfile, Result, StorageInfo, TPUInfo, ThermalInfo,
+    USBDevice, VirtualizationInfo,
 };
 use serde::{Deserialize, Serialize};
-use std::time::{SystemTime, UNIX_EPOCH};
 use std::collections::HashMap;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 /// Complete system hardware information
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -180,7 +180,7 @@ impl HardwareInfo {
     /// Get comprehensive accelerator information
     pub fn accelerator_summary(&self) -> HashMap<String, usize> {
         let mut summary = HashMap::new();
-        
+
         if !self.npus.is_empty() {
             summary.insert("NPUs".to_string(), self.npus.len());
         }
@@ -190,7 +190,7 @@ impl HardwareInfo {
         if !self.fpgas.is_empty() {
             summary.insert("FPGAs".to_string(), self.fpgas.len());
         }
-        
+
         summary
     }
 

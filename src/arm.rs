@@ -42,37 +42,37 @@ impl std::fmt::Display for ARMSystemType {
 pub struct ARMHardwareInfo {
     /// System type
     pub system_type: ARMSystemType,
-    
+
     /// Board model
     pub board_model: String,
-    
+
     /// Board revision
     pub board_revision: Option<String>,
-    
+
     /// Serial number
     pub serial_number: Option<String>,
-    
+
     /// CPU architecture
     pub cpu_architecture: String,
-    
+
     /// CPU cores
     pub cpu_cores: u32,
-    
+
     /// GPU information (if available)
     pub gpu_info: Option<String>,
-    
+
     /// Available acceleration features
     pub acceleration_features: Vec<String>,
-    
+
     /// AI/ML capabilities
     pub ml_capabilities: HashMap<String, String>,
-    
+
     /// Memory configuration
     pub memory_mb: Option<u64>,
-    
+
     /// Available interfaces
     pub interfaces: Vec<String>,
-    
+
     /// Power information
     pub power_info: Option<PowerInfo>,
 }
@@ -82,16 +82,16 @@ pub struct ARMHardwareInfo {
 pub struct PowerInfo {
     /// Current power consumption in watts
     pub power_consumption: Option<f32>,
-    
+
     /// CPU temperature in Celsius
     pub cpu_temperature: Option<f32>,
-    
+
     /// GPU temperature in Celsius (if available)
     pub gpu_temperature: Option<f32>,
-    
+
     /// Throttling status
     pub throttling: bool,
-    
+
     /// Power supply voltage
     pub voltage: Option<f32>,
 }
@@ -105,34 +105,34 @@ impl ARMHardwareInfo {
             if let Some(hardware_info) = Self::detect_raspberry_pi()? {
                 return Ok(Some(hardware_info));
             }
-            
+
             if let Some(hardware_info) = Self::detect_nvidia_jetson()? {
                 return Ok(Some(hardware_info));
             }
-            
+
             if let Some(hardware_info) = Self::detect_apple_silicon()? {
                 return Ok(Some(hardware_info));
             }
-            
+
             if let Some(hardware_info) = Self::detect_qualcomm_snapdragon()? {
                 return Ok(Some(hardware_info));
             }
-            
+
             // Generic ARM detection
             if let Some(hardware_info) = Self::detect_generic_arm()? {
                 return Ok(Some(hardware_info));
             }
         }
-        
+
         #[cfg(not(target_arch = "aarch64"))]
         {
             // On non-ARM systems, still try to detect if we're in an emulated environment
             // or if there's ARM hardware information available
         }
-        
+
         Ok(None)
     }
-    
+
     #[cfg(target_arch = "aarch64")]
     fn detect_raspberry_pi() -> Result<Option<ARMHardwareInfo>> {
         // Check for Raspberry Pi specific files
@@ -152,26 +152,30 @@ impl ARMHardwareInfo {
                     interfaces: Self::get_pi_interfaces(),
                     power_info: Self::get_pi_power_info(),
                 };
-                
+
                 // Determine specific Pi model for better capabilities
                 if model.contains("Pi 5") {
-                    hardware_info.acceleration_features.push("VideoCore VII GPU".to_string());
+                    hardware_info
+                        .acceleration_features
+                        .push("VideoCore VII GPU".to_string());
                     hardware_info.ml_capabilities.insert(
                         "inference_performance".to_string(),
                         "High (ARM Cortex-A76)".to_string(),
                     );
                 } else if model.contains("Pi 4") {
-                    hardware_info.acceleration_features.push("VideoCore VI GPU".to_string());
+                    hardware_info
+                        .acceleration_features
+                        .push("VideoCore VI GPU".to_string());
                     hardware_info.ml_capabilities.insert(
                         "inference_performance".to_string(),
                         "Medium (ARM Cortex-A72)".to_string(),
                     );
                 }
-                
+
                 return Ok(Some(hardware_info));
             }
         }
-        
+
         // Alternative detection via /proc/cpuinfo
         if let Ok(cpuinfo) = std::fs::read_to_string("/proc/cpuinfo") {
             if cpuinfo.contains("BCM") && cpuinfo.contains("Raspberry Pi") {
@@ -180,7 +184,12 @@ impl ARMHardwareInfo {
                     if line.starts_with("Model") {
                         return Ok(Some(ARMHardwareInfo {
                             system_type: ARMSystemType::RaspberryPi,
-                            board_model: line.split(':').nth(1).unwrap_or("Unknown").trim().to_string(),
+                            board_model: line
+                                .split(':')
+                                .nth(1)
+                                .unwrap_or("Unknown")
+                                .trim()
+                                .to_string(),
                             board_revision: Self::get_pi_revision(),
                             serial_number: Self::get_pi_serial(),
                             cpu_architecture: Self::get_cpu_architecture(),
@@ -196,10 +205,10 @@ impl ARMHardwareInfo {
                 }
             }
         }
-        
+
         Ok(None)
     }
-    
+
     #[cfg(target_arch = "aarch64")]
     fn detect_nvidia_jetson() -> Result<Option<ARMHardwareInfo>> {
         // Check for Jetson-specific files
@@ -225,7 +234,7 @@ impl ARMHardwareInfo {
                 } else {
                     "NVIDIA Jetson"
                 };
-                
+
                 return Ok(Some(ARMHardwareInfo {
                     system_type: ARMSystemType::NVIDIAJetson,
                     board_model: jetson_model.to_string(),
@@ -242,7 +251,7 @@ impl ARMHardwareInfo {
                 }));
             }
         }
-        
+
         // Check via lshw or nvidia-smi if available
         if let Ok(output) = Command::new("nvidia-smi").arg("-L").output() {
             if output.status.success() {
@@ -262,16 +271,20 @@ impl ARMHardwareInfo {
                             ("tensorrt_support".to_string(), "true".to_string()),
                         ]),
                         memory_mb: Self::get_memory_size(),
-                        interfaces: vec!["USB".to_string(), "Ethernet".to_string(), "WiFi".to_string()],
+                        interfaces: vec![
+                            "USB".to_string(),
+                            "Ethernet".to_string(),
+                            "WiFi".to_string(),
+                        ],
                         power_info: None,
                     }));
                 }
             }
         }
-        
+
         Ok(None)
     }
-    
+
     #[cfg(target_arch = "aarch64")]
     fn detect_apple_silicon() -> Result<Option<ARMHardwareInfo>> {
         #[cfg(target_os = "macos")]
@@ -302,7 +315,11 @@ impl ARMHardwareInfo {
                             ("metal_performance_shaders".to_string(), "true".to_string()),
                         ]),
                         memory_mb: Self::get_memory_size(),
-                        interfaces: vec!["Thunderbolt".to_string(), "USB-C".to_string(), "WiFi".to_string()],
+                        interfaces: vec![
+                            "Thunderbolt".to_string(),
+                            "USB-C".to_string(),
+                            "WiFi".to_string(),
+                        ],
                         power_info: None,
                     }));
                 }
@@ -310,7 +327,7 @@ impl ARMHardwareInfo {
         }
         Ok(None)
     }
-    
+
     // Helper functions for hardware detection
     #[cfg(target_arch = "aarch64")]
     fn get_pi_revision() -> Option<String> {
@@ -321,7 +338,7 @@ impl ARMHardwareInfo {
             .and_then(|line| line.split(':').nth(1))
             .map(|s| s.trim().to_string())
     }
-    
+
     #[cfg(target_arch = "aarch64")]
     fn get_pi_serial() -> Option<String> {
         std::fs::read_to_string("/proc/cpuinfo")
@@ -331,17 +348,17 @@ impl ARMHardwareInfo {
             .and_then(|line| line.split(':').nth(1))
             .map(|s| s.trim().to_string())
     }
-    
+
     #[cfg(target_arch = "aarch64")]
     fn get_cpu_architecture() -> String {
         std::env::consts::ARCH.to_string()
     }
-    
+
     #[cfg(target_arch = "aarch64")]
     fn get_cpu_cores() -> u32 {
         num_cpus::get() as u32
     }
-    
+
     #[cfg(target_arch = "aarch64")]
     fn get_memory_size() -> Option<u64> {
         if let Ok(meminfo) = std::fs::read_to_string("/proc/meminfo") {
@@ -357,36 +374,47 @@ impl ARMHardwareInfo {
         }
         None
     }
-    
+
     // Placeholder implementations - would be expanded with real detection
     #[cfg(target_arch = "aarch64")]
     fn detect_qualcomm_snapdragon() -> Result<Option<ARMHardwareInfo>> {
         Ok(None)
     }
-    
+
     #[cfg(target_arch = "aarch64")]
     fn detect_generic_arm() -> Result<Option<ARMHardwareInfo>> {
         Ok(None)
     }
-    
+
     #[cfg(target_arch = "aarch64")]
     fn get_pi_acceleration_features() -> Vec<String> {
-        vec!["VideoCore GPU".to_string(), "Hardware Video Decode".to_string()]
+        vec![
+            "VideoCore GPU".to_string(),
+            "Hardware Video Decode".to_string(),
+        ]
     }
-    
+
     #[cfg(target_arch = "aarch64")]
     fn get_pi_ml_capabilities() -> HashMap<String, String> {
         HashMap::from([
             ("cpu_inference".to_string(), "true".to_string()),
-            ("frameworks".to_string(), "TensorFlow Lite, PyTorch".to_string()),
+            (
+                "frameworks".to_string(),
+                "TensorFlow Lite, PyTorch".to_string(),
+            ),
         ])
     }
-    
+
     #[cfg(target_arch = "aarch64")]
     fn get_pi_interfaces() -> Vec<String> {
-        vec!["GPIO".to_string(), "I2C".to_string(), "SPI".to_string(), "UART".to_string()]
+        vec![
+            "GPIO".to_string(),
+            "I2C".to_string(),
+            "SPI".to_string(),
+            "UART".to_string(),
+        ]
     }
-    
+
     #[cfg(target_arch = "aarch64")]
     fn get_pi_power_info() -> Option<PowerInfo> {
         // Try to read Pi-specific thermal info
@@ -394,7 +422,7 @@ impl ARMHardwareInfo {
             .ok()
             .and_then(|temp_str| temp_str.trim().parse::<f32>().ok())
             .map(|temp| temp / 1000.0); // Convert millidegrees to degrees
-        
+
         Some(PowerInfo {
             power_consumption: None, // Pi doesn't expose this easily
             cpu_temperature: cpu_temp,
@@ -403,22 +431,22 @@ impl ARMHardwareInfo {
             voltage: None,
         })
     }
-    
+
     // Jetson-specific helper functions
     #[cfg(target_arch = "aarch64")]
     fn get_jetson_revision() -> Option<String> {
         None // Placeholder
     }
-    
+
     #[cfg(target_arch = "aarch64")]
     fn get_jetson_serial() -> Option<String> {
         None // Placeholder
     }
-    
+
     #[cfg(target_arch = "aarch64")]
     fn get_jetson_acceleration_features(model: &str) -> Vec<String> {
         let mut features = vec!["CUDA".to_string(), "TensorRT".to_string()];
-        
+
         if model.contains("Orin") {
             features.push("Ampere GPU".to_string());
             features.push("NVENC/NVDEC".to_string());
@@ -426,10 +454,10 @@ impl ARMHardwareInfo {
             features.push("Volta GPU".to_string());
             features.push("Deep Learning Accelerator".to_string());
         }
-        
+
         features
     }
-    
+
     #[cfg(target_arch = "aarch64")]
     fn get_jetson_ml_capabilities(model: &str) -> HashMap<String, String> {
         let mut capabilities = HashMap::from([
@@ -437,7 +465,7 @@ impl ARMHardwareInfo {
             ("tensorrt_support".to_string(), "true".to_string()),
             ("deep_learning_accelerator".to_string(), "true".to_string()),
         ]);
-        
+
         if model.contains("Orin") {
             capabilities.insert("inference_performance".to_string(), "Very High".to_string());
             capabilities.insert("training_support".to_string(), "Yes".to_string());
@@ -445,10 +473,10 @@ impl ARMHardwareInfo {
             capabilities.insert("inference_performance".to_string(), "High".to_string());
             capabilities.insert("training_support".to_string(), "Limited".to_string());
         }
-        
+
         capabilities
     }
-    
+
     #[cfg(target_arch = "aarch64")]
     fn get_jetson_interfaces() -> Vec<String> {
         vec![
@@ -463,7 +491,7 @@ impl ARMHardwareInfo {
             "HDMI".to_string(),
         ]
     }
-    
+
     #[cfg(target_arch = "aarch64")]
     fn get_jetson_power_info() -> Option<PowerInfo> {
         None // Placeholder - would read from Jetson power monitoring

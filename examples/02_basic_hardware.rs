@@ -120,33 +120,35 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Specialized hardware detection
     println!("\nSpecialized Hardware:");
-    
+
     // Check for NPUs
     let npus = hw_info.npus();
     if !npus.is_empty() {
         println!("  NPUs:");
         for npu in npus {
-            println!("    {} {} - {} TOPS", 
-                npu.vendor, 
+            println!(
+                "    {} {} - {} TOPS",
+                npu.vendor,
                 npu.model_name,
                 npu.tops_performance.unwrap_or(0.0)
             );
         }
     }
-    
+
     // Check for TPUs
     let tpus = hw_info.tpus();
     if !tpus.is_empty() {
         println!("  TPUs:");
         for tpu in tpus {
-            println!("    {} {:?} - {:.1} TOPS", 
+            println!(
+                "    {} {:?} - {:.1} TOPS",
                 tpu.vendor,
                 tpu.architecture,
                 tpu.tops_performance.unwrap_or(0.0)
             );
         }
     }
-    
+
     // Check for ARM-specific hardware
     if let Some(arm) = hw_info.arm_hardware() {
         println!("  ARM System: {}", arm.system_type);
@@ -159,13 +161,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
         }
     }
-    
+
     // Check for FPGAs
     let fpgas = hw_info.fpgas();
     if !fpgas.is_empty() {
         println!("  FPGAs:");
         for fpga in fpgas {
-            println!("    {} {} - {} logic elements",
+            println!(
+                "    {} {} - {} logic elements",
                 fpga.vendor,
                 fpga.family,
                 fpga.logic_elements.unwrap_or(0)

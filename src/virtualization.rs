@@ -346,20 +346,21 @@ impl VirtualizationInfo {
                 }
 
                 if !runtime.security_context.user_namespace {
-                    recommendations.push(
-                        "Enable user namespace mapping for better isolation".to_string(),
-                    );
+                    recommendations
+                        .push("Enable user namespace mapping for better isolation".to_string());
                 }
 
                 if runtime.security_context.security_profile.is_none() {
-                    recommendations.push(
-                        "Apply AppArmor/SELinux security profile".to_string(),
-                    );
+                    recommendations.push("Apply AppArmor/SELinux security profile".to_string());
                 }
             }
         }
 
-        if self.is_virtual_machine() && !self.security_features.contains(&SecurityFeature::SecureBoot) {
+        if self.is_virtual_machine()
+            && !self
+                .security_features
+                .contains(&SecurityFeature::SecureBoot)
+        {
             recommendations.push("Enable Secure Boot for enhanced security".to_string());
         }
 
@@ -491,7 +492,9 @@ impl VirtualizationInfo {
     fn calculate_performance_impact(env_type: &VirtualizationType) -> f64 {
         match env_type {
             VirtualizationType::Native => 1.0,
-            VirtualizationType::Docker | VirtualizationType::LXC | VirtualizationType::Podman => 0.95,
+            VirtualizationType::Docker | VirtualizationType::LXC | VirtualizationType::Podman => {
+                0.95
+            }
             VirtualizationType::Kubernetes => 0.92,
             VirtualizationType::WSL2 => 0.90,
             VirtualizationType::VirtualMachine => 0.85,

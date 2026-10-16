@@ -1,6 +1,4 @@
-use hardware_query::{
-    CPUInfo, GPUInfo, HardwareInfo, MemoryInfo, StorageInfo,
-};
+use hardware_query::{CPUInfo, GPUInfo, HardwareInfo, MemoryInfo, StorageInfo};
 
 #[test]
 fn test_cpu_info_detection() {

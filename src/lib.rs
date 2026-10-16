@@ -11,7 +11,7 @@
 //!
 //! ```rust
 //! use hardware_query::SystemOverview;
-//! 
+//!
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! let overview = SystemOverview::quick()?;
 //! println!("{}", overview);  // Formatted system summary with health status
@@ -97,7 +97,7 @@
 //!
 //! // Analyze GPU capabilities for AI workloads
 //! for gpu in hw_info.gpus() {
-//!     println!("GPU: {} {} - {} GB VRAM", 
+//!     println!("GPU: {} {} - {} GB VRAM",
 //!         gpu.vendor(), gpu.model_name(), gpu.memory_gb());
 //!     
 //!     if gpu.supports_cuda() {
@@ -178,9 +178,11 @@
 //!
 //! All APIs work consistently across platforms, with graceful degradation when specific hardware isn't available.
 
+mod arm;
 mod battery;
 mod cpu;
 mod error;
+mod fpga;
 mod gpu;
 mod hardware_info;
 mod memory;
@@ -188,47 +190,58 @@ mod network;
 mod npu;
 mod pci;
 pub mod platform;
+mod power;
 mod storage;
 mod thermal;
 mod tpu;
 mod usb;
-mod arm;
-mod fpga;
-mod power;
 mod virtualization;
 
 #[cfg(feature = "monitoring")]
 mod monitoring;
 
 // Simplified API modules
-pub mod simple;
 pub mod builder;
 pub mod presets;
+pub mod simple;
 
+pub use arm::{ARMHardwareInfo, ARMSystemType, PowerInfo};
 pub use battery::{BatteryInfo, BatteryStatus};
 pub use cpu::{CPUFeature, CPUInfo, CPUVendor};
 pub use error::{HardwareQueryError, Result};
+pub use fpga::{FPGAFamily, FPGAInfo, FPGAInterface, FPGAVendor};
 pub use gpu::{GPUInfo, GPUType, GPUVendor};
 pub use hardware_info::HardwareInfo;
 pub use memory::{MemoryInfo, MemoryType};
 pub use network::{NetworkInfo, NetworkType};
-pub use npu::{NPUInfo, NPUVendor, NPUType, NPUArchitecture};
+pub use npu::{NPUArchitecture, NPUInfo, NPUType, NPUVendor};
 pub use pci::PCIDevice;
+pub use power::{
+    OptimizationCategory, PowerOptimization, PowerProfile, PowerState, ThrottlingRisk,
+};
 pub use storage::{StorageInfo, StorageType};
-pub use thermal::{FanInfo, ThermalInfo, ThermalSensor, ThrottlingPrediction, CoolingRecommendation, ThrottlingSeverity};
-pub use tpu::{TPUInfo, TPUVendor, TPUArchitecture, TPUConnectionType};
+pub use thermal::{
+    CoolingRecommendation, FanInfo, ThermalInfo, ThermalSensor, ThrottlingPrediction,
+    ThrottlingSeverity,
+};
+pub use tpu::{TPUArchitecture, TPUConnectionType, TPUInfo, TPUVendor};
 pub use usb::USBDevice;
-pub use arm::{ARMHardwareInfo, ARMSystemType, PowerInfo};
-pub use fpga::{FPGAInfo, FPGAVendor, FPGAFamily, FPGAInterface};
-pub use power::{PowerProfile, PowerState, ThrottlingRisk, PowerOptimization, OptimizationCategory};
-pub use virtualization::{VirtualizationInfo, VirtualizationType, ContainerRuntime, ResourceLimits};
+pub use virtualization::{
+    ContainerRuntime, ResourceLimits, VirtualizationInfo, VirtualizationType,
+};
 
 #[cfg(feature = "monitoring")]
-pub use monitoring::{HardwareMonitor, MonitoringConfig, MonitoringEvent, MonitoringStats, MonitoringCallback};
+pub use monitoring::{
+    HardwareMonitor, MonitoringCallback, MonitoringConfig, MonitoringEvent, MonitoringStats,
+};
 
 // Simplified API exports - these are the recommended entry points for most users
-pub use simple::{SystemOverview, SimpleCPU, SimpleGPU, SimpleStorage, SystemHealth, 
-                 HealthStatus, TemperatureStatus, PowerStatus};
-pub use builder::{HardwareQueryBuilder, CustomHardwareInfo};
-pub use presets::{HardwarePresets, AIHardwareAssessment, GamingHardwareAssessment, 
-                  DeveloperHardwareAssessment, ServerHardwareAssessment};
+pub use builder::{CustomHardwareInfo, HardwareQueryBuilder};
+pub use presets::{
+    AIHardwareAssessment, DeveloperHardwareAssessment, GamingHardwareAssessment, HardwarePresets,
+    ServerHardwareAssessment,
+};
+pub use simple::{
+    HealthStatus, PowerStatus, SimpleCPU, SimpleGPU, SimpleStorage, SystemHealth, SystemOverview,
+    TemperatureStatus,
+};

@@ -139,32 +139,32 @@ pub enum PowerStatus {
 /// Simplified hardware query functions
 impl SystemOverview {
     /// Get a quick system overview with the most important information
-    /// 
+    ///
     /// This is the fastest way to get a comprehensive system summary. Perfect for:
     /// - System diagnostics and health checks
     /// - Application compatibility verification  
     /// - Performance baseline establishment
     /// - Environment detection (native/container/VM)
-    /// 
+    ///
     /// # Example
-    /// 
+    ///
     /// ```rust
     /// use hardware_query::SystemOverview;
-    /// 
+    ///
     /// # fn main() -> Result<(), Box<dyn std::error::Error>> {
     /// let overview = SystemOverview::quick()?;
-    /// 
+    ///
     /// // Get formatted system summary
     /// println!("{}", overview);
-    /// 
+    ///
     /// // Access specific components
     /// println!("CPU: {} cores", overview.cpu.cores);
     /// println!("Memory: {:.1} GB", overview.memory_gb);
-    /// 
+    ///
     /// if let Some(gpu) = &overview.gpu {
     ///     println!("GPU: {} ({:.1} GB VRAM)", gpu.name, gpu.vram_gb);
     /// }
-    /// 
+    ///
     /// // Check system health
     /// println!("System Health: {:?}", overview.health.overall_status);
     /// println!("Performance Score: {}/100", overview.performance_score);
@@ -219,9 +219,9 @@ impl SystemOverview {
     /// Check if the system is suitable for AI/ML workloads
     pub fn is_ai_ready(&self) -> bool {
         // Basic AI readiness check
-        self.cpu.ai_capable || 
-        self.gpu.as_ref().map_or(false, |gpu| gpu.ai_capable) ||
-        self.memory_gb >= 8.0
+        self.cpu.ai_capable
+            || self.gpu.as_ref().map_or(false, |gpu| gpu.ai_capable)
+            || self.memory_gb >= 8.0
     }
 
     /// Get AI/ML suitability score (0-100)
@@ -272,7 +272,8 @@ impl SystemOverview {
 
         // Memory recommendations
         if self.memory_gb < 16.0 {
-            recommendations.push("Consider upgrading to 16GB+ RAM for better performance".to_string());
+            recommendations
+                .push("Consider upgrading to 16GB+ RAM for better performance".to_string());
         }
 
         // GPU recommendations
@@ -280,7 +281,8 @@ impl SystemOverview {
             recommendations.push("Add a dedicated GPU for AI/ML acceleration".to_string());
         } else if let Some(gpu) = &self.gpu {
             if gpu.vram_gb < 4.0 {
-                recommendations.push("Consider a GPU with more VRAM for large AI models".to_string());
+                recommendations
+                    .push("Consider a GPU with more VRAM for large AI models".to_string());
             }
         }
 
@@ -300,38 +302,38 @@ impl SystemOverview {
     fn check_cpu_ai_capabilities(hw_info: &HardwareInfo) -> bool {
         let cpu = hw_info.cpu();
         // Check for AI-relevant features
-        cpu.has_feature("avx2") || 
-        cpu.has_feature("avx512") || 
-        cpu.has_feature("amx") ||
-        !hw_info.npus().is_empty()
+        cpu.has_feature("avx2")
+            || cpu.has_feature("avx512")
+            || cpu.has_feature("amx")
+            || !hw_info.npus().is_empty()
     }
 
     fn check_gpu_ai_capabilities(gpu: &crate::GPUInfo) -> bool {
         // Check if GPU supports common AI frameworks
         let vendor = gpu.vendor().to_string().to_lowercase();
         let name = gpu.model_name().to_lowercase();
-        
+
         // NVIDIA GPUs generally support CUDA
         if vendor.contains("nvidia") {
             return true;
         }
-        
+
         // AMD GPUs with ROCm support
         if vendor.contains("amd") && (name.contains("rx") || name.contains("radeon")) {
             return true;
         }
-        
+
         // Intel Arc GPUs
         if vendor.contains("intel") && name.contains("arc") {
             return true;
         }
-        
+
         false
     }
 
     fn calculate_storage_summary(hw_info: &HardwareInfo) -> Result<SimpleStorage> {
         let storage_devices = hw_info.storage_devices();
-        
+
         if storage_devices.is_empty() {
             return Ok(SimpleStorage {
                 total_gb: 0.0,
@@ -341,11 +343,13 @@ impl SystemOverview {
             });
         }
 
-        let total_gb: f64 = storage_devices.iter()
+        let total_gb: f64 = storage_devices
+            .iter()
             .map(|device| device.capacity_gb())
             .sum();
 
-        let available_gb: f64 = storage_devices.iter()
+        let available_gb: f64 = storage_devices
+            .iter()
             .map(|device| device.available_gb())
             .sum();
 
@@ -371,7 +375,7 @@ impl SystemOverview {
 
     fn assess_system_health(hw_info: &HardwareInfo) -> Result<SystemHealth> {
         let mut warnings = Vec::new();
-        
+
         // Temperature assessment
         let thermal = hw_info.thermal();
         let temperature = if let Some(max_temp) = thermal.max_temperature() {
@@ -417,7 +421,9 @@ impl SystemOverview {
             (_, PowerStatus::VeryHigh, _) => HealthStatus::Fair,
             (_, _, n) if n > 2 => HealthStatus::Poor,
             (_, _, n) if n > 0 => HealthStatus::Fair,
-            (TemperatureStatus::Normal, PowerStatus::Normal | PowerStatus::Low, 0) => HealthStatus::Excellent,
+            (TemperatureStatus::Normal, PowerStatus::Normal | PowerStatus::Low, 0) => {
+                HealthStatus::Excellent
+            }
             _ => HealthStatus::Good,
         };
 

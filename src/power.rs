@@ -140,7 +140,7 @@ impl PowerProfile {
         let storage_power = Self::query_storage_power()?;
         let network_power = Self::query_network_power()?;
         let other_power = Self::query_other_power()?;
-        
+
         let efficiency_score = Self::calculate_efficiency_score(total_power_draw);
         let thermal_throttling_risk = Self::assess_throttling_risk()?;
         let power_state = Self::query_power_state()?;
@@ -163,14 +163,16 @@ impl PowerProfile {
 
     /// Estimate battery life based on current power consumption
     pub fn estimate_battery_life(&self, battery: &BatteryInfo) -> Option<Duration> {
-        if let (Some(power_draw), Some(capacity_wh)) = (self.total_power_draw, battery.capacity_wh()) {
+        if let (Some(power_draw), Some(capacity_wh)) =
+            (self.total_power_draw, battery.capacity_wh())
+        {
             if power_draw > 0.0 {
                 // Calculate remaining capacity in wh
                 let remaining_wh = capacity_wh * (battery.charge_percent() as f32 / 100.0);
-                
+
                 // Estimate hours remaining
                 let hours_remaining = remaining_wh / power_draw;
-                
+
                 // Convert to Duration
                 let seconds = (hours_remaining * 3600.0) as u64;
                 return Some(Duration::from_secs(seconds));
@@ -188,7 +190,8 @@ impl PowerProfile {
             if cpu_power > 50.0 {
                 optimizations.push(PowerOptimization {
                     category: OptimizationCategory::CPUScaling,
-                    recommendation: "Consider reducing CPU frequency or enabling power saving mode".to_string(),
+                    recommendation: "Consider reducing CPU frequency or enabling power saving mode"
+                        .to_string(),
                     expected_savings_watts: Some(cpu_power * 0.2),
                     performance_impact: 0.85,
                     priority: OptimizationPriority::Medium,
@@ -214,7 +217,9 @@ impl PowerProfile {
             ThrottlingRisk::High | ThrottlingRisk::Critical => {
                 optimizations.push(PowerOptimization {
                     category: OptimizationCategory::ThermalManagement,
-                    recommendation: "High thermal throttling risk detected. Reduce workload or improve cooling".to_string(),
+                    recommendation:
+                        "High thermal throttling risk detected. Reduce workload or improve cooling"
+                            .to_string(),
                     expected_savings_watts: None,
                     performance_impact: 1.0,
                     priority: OptimizationPriority::Critical,
@@ -223,7 +228,9 @@ impl PowerProfile {
             ThrottlingRisk::Moderate => {
                 optimizations.push(PowerOptimization {
                     category: OptimizationCategory::ThermalManagement,
-                    recommendation: "Consider improving system cooling or reducing sustained workloads".to_string(),
+                    recommendation:
+                        "Consider improving system cooling or reducing sustained workloads"
+                            .to_string(),
                     expected_savings_watts: None,
                     performance_impact: 0.95,
                     priority: OptimizationPriority::Medium,
