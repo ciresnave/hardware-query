@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.2] - 2026-10-16
+
+### Fixed
+- The crate failed to compile on Linux (`#[cfg(target_os = "linux")]` paths):
+  13 `E0433` in `cpu.rs` from `fs::read_to_string` calls with no `use std::fs`,
+  and 3 `E0599` in `tpu.rs` from calls to `get_edge_tpu_driver_version` /
+  `get_habana_driver_version`, neither of which was ever defined. This fix was
+  already merged to `main` (#4, `fix: make it build`) but never released --
+  0.2.1 on crates.io predates it. This release just ships that existing fix.
+
+### Added
+- An isolated `build-linux` CI job (`cargo build --all-features` on
+  `ubuntu-latest`, no fmt/clippy steps ahead of it) so a Linux build
+  regression shows up as its own red instead of being masked by the combined
+  `test` job's earlier formatting step.
+
 ## [0.2.0] - 2025-07-18
 
 ### Added
