@@ -383,6 +383,7 @@ impl NPUInfo {
     }
 
     // Helper functions for driver version detection
+    #[cfg(any(target_os = "linux", target_os = "windows"))]
     fn get_intel_ncs_driver_version() -> Option<String> {
         // Try to get OpenVINO version as proxy for NCS driver
         #[cfg(target_os = "linux")]
@@ -399,6 +400,7 @@ impl NPUInfo {
         None
     }
 
+    #[cfg(any(target_os = "linux", target_os = "windows"))]
     fn get_intel_gna_driver_version() -> Option<String> {
         // Check for Intel GNA driver version
         #[cfg(target_os = "linux")]
