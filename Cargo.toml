@@ -1,6 +1,6 @@
 [package]
 name = "hardware-query"
-version = "0.2.4"
+version = "0.3.0"
 edition = "2024"
 authors = ["Eric Evans <ciresnave@gmail.com>"]
 description = "Cross-platform Rust library for comprehensive hardware detection, real-time monitoring, power management, and AI/ML optimization"
@@ -31,15 +31,6 @@ async-trait = { version = "0.1", optional = true }
 winapi = { version = "0.3", features = ["winnt", "sysinfoapi", "powerbase", "pdh", "wbemcli", "oleauto"] }
 wmi = "0.18"
 windows = { version = "0.62", features = ["Win32_System_Performance", "Win32_Storage_FileSystem", "Win32_NetworkManagement_IpHelper"] }
-
-[target.'cfg(target_os = "linux")'.dependencies]
-libc = "0.2"
-nix = "0.31"
-
-[target.'cfg(target_os = "macos")'.dependencies]
-core-foundation = "0.10"
-core-foundation-sys = "0.8"
-system-configuration = "0.8"
 
 # Optional GPU libraries
 [dependencies.nvml-wrapper]

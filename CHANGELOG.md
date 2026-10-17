@@ -5,7 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.2.4] - 2026-10-16
+## [0.3.0] - 2026-10-16
+
+### Breaking
+- `rust-version` raised 1.85 -> 1.95 (see below) -- a breaking change for
+  consumers on an older toolchain, hence the major bump rather than 0.2.4
+  under the pre-1.0 "second number is major" convention.
+
+### Removed
+- `core-foundation`, `core-foundation-sys`, `system-configuration` (macOS)
+  and `nix`, `libc` (Linux): 5 declared dependencies with no `use` of them
+  anywhere in this crate's source (confirmed by grep, not inferred --
+  `libc` found independently of the other 4, same reasoning). Dead
+  weight, and it shrinks the surface a future macOS/Linux dependency
+  bump can break. `libc` and `core-foundation-sys` may still appear in
+  `Cargo.lock` as transitive dependencies of other crates (e.g. tokio,
+  nvml-wrapper) -- only our own direct, unused declarations are removed.
+
 
 ### Changed
 - All dependencies bumped to their latest published version (CireSnave's
