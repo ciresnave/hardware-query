@@ -1,6 +1,8 @@
 use crate::{HardwareQueryError, Result};
 use serde::{Deserialize, Serialize};
-use std::{fmt, fs};
+use std::fmt;
+#[cfg(target_os = "linux")]
+use std::fs;
 use sysinfo::System;
 
 /// CPU vendor information
@@ -471,6 +473,7 @@ impl CPUInfo {
     }
 
     fn detect_vulnerabilities() -> Result<Vec<String>> {
+        #[cfg_attr(not(target_os = "linux"), allow(unused_mut))]
         let mut vulnerabilities = Vec::new();
 
         #[cfg(target_os = "linux")]
@@ -641,10 +644,9 @@ impl CPUInfo {
     #[cfg(target_os = "linux")]
     fn detect_l1_cache_linux() -> Result<u32> {
         if let Ok(content) = fs::read_to_string("/sys/devices/system/cpu/cpu0/cache/index0/size") {
-            if let Ok(size_str) = content.trim().parse::<String>() {
-                if let Ok(size) = size_str.trim_end_matches('K').parse::<u32>() {
-                    return Ok(size);
-                }
+            let size_str = content.trim();
+            if let Ok(size) = size_str.trim_end_matches('K').parse::<u32>() {
+                return Ok(size);
             }
         }
         Ok(32) // Default fallback
@@ -653,10 +655,9 @@ impl CPUInfo {
     #[cfg(target_os = "linux")]
     fn detect_l2_cache_linux() -> Result<u32> {
         if let Ok(content) = fs::read_to_string("/sys/devices/system/cpu/cpu0/cache/index1/size") {
-            if let Ok(size_str) = content.trim().parse::<String>() {
-                if let Ok(size) = size_str.trim_end_matches('K').parse::<u32>() {
-                    return Ok(size);
-                }
+            let size_str = content.trim();
+            if let Ok(size) = size_str.trim_end_matches('K').parse::<u32>() {
+                return Ok(size);
             }
         }
         Ok(256) // Default fallback
@@ -665,10 +666,9 @@ impl CPUInfo {
     #[cfg(target_os = "linux")]
     fn detect_l3_cache_linux() -> Result<u32> {
         if let Ok(content) = fs::read_to_string("/sys/devices/system/cpu/cpu0/cache/index2/size") {
-            if let Ok(size_str) = content.trim().parse::<String>() {
-                if let Ok(size) = size_str.trim_end_matches('K').parse::<u32>() {
-                    return Ok(size);
-                }
+            let size_str = content.trim();
+            if let Ok(size) = size_str.trim_end_matches('K').parse::<u32>() {
+                return Ok(size);
             }
         }
         Ok(8192) // Default fallback

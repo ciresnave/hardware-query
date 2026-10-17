@@ -1,18 +1,15 @@
 /*!
  * Advanced Hardware Query Example
- * 
+ *
  * This example demonstrates advanced usage patterns including:
  * - Error handling strategies
- * - Performance monitoring 
+ * - Performance monitoring
  * - Serialization and persistence
  * - Conditional compilation for different platforms
  * - Integration with async code
  */
 
-use hardware_query::{
-    HardwareQueryError,
-    HardwareInfo,
-};
+use hardware_query::{HardwareInfo, HardwareQueryError};
 use std::error::Error;
 use std::fs;
 use std::time::Instant;
@@ -53,7 +50,10 @@ async fn demonstrate_performance_monitoring() -> Result<(), Box<dyn Error>> {
     println!("   - CPU cores: {}", hw_info.cpu().physical_cores());
     println!("   - GPUs: {}", hw_info.gpus().len());
     println!("   - Storage devices: {}", hw_info.storage_devices().len());
-    println!("   - Network interfaces: {}", hw_info.network_interfaces().len());
+    println!(
+        "   - Network interfaces: {}",
+        hw_info.network_interfaces().len()
+    );
 
     // Performance analysis
     if query_duration.as_millis() > 1000 {
@@ -74,7 +74,7 @@ async fn demonstrate_error_handling() -> Result<(), Box<dyn Error>> {
     match HardwareInfo::query() {
         Ok(hw_info) => {
             println!("✅ Full hardware information available");
-            
+
             // Even with successful query, individual components might have limitations
             if hw_info.gpus().is_empty() {
                 println!("⚠️  No GPUs detected - will fall back to CPU-only processing");
@@ -125,7 +125,10 @@ async fn demonstrate_serialization() -> Result<(), Box<dyn Error>> {
 
     // Serialize to JSON
     let json_data = hw_info.to_json()?;
-    println!("✅ Serialized hardware info to JSON ({} bytes)", json_data.len());
+    println!(
+        "✅ Serialized hardware info to JSON ({} bytes)",
+        json_data.len()
+    );
 
     // Save to file
     let temp_file = "hardware_info.json";
@@ -138,7 +141,10 @@ async fn demonstrate_serialization() -> Result<(), Box<dyn Error>> {
     println!("✅ Loaded and deserialized hardware info from file");
 
     // Verify data integrity
-    assert_eq!(hw_info.cpu().physical_cores(), loaded_hw_info.cpu().physical_cores());
+    assert_eq!(
+        hw_info.cpu().physical_cores(),
+        loaded_hw_info.cpu().physical_cores()
+    );
     assert_eq!(hw_info.memory().total_mb, loaded_hw_info.memory().total_mb);
     println!("✅ Data integrity verified after roundtrip");
 
@@ -169,7 +175,7 @@ async fn demonstrate_platform_specific() -> Result<(), Box<dyn Error>> {
         println!("🪟 Windows-specific features:");
         println!("   - WMI-based hardware detection enabled");
         println!("   - DirectML acceleration available");
-        
+
         // Check for Windows-specific GPU features
         for gpu in hw_info.gpus() {
             if gpu.supports_directml() {
@@ -183,7 +189,7 @@ async fn demonstrate_platform_specific() -> Result<(), Box<dyn Error>> {
         println!("🐧 Linux-specific features:");
         println!("   - /proc and /sys filesystem detection enabled");
         println!("   - ROCm support available (if installed)");
-        
+
         // Check for Linux-specific features
         for gpu in hw_info.gpus() {
             if gpu.supports_rocm() {
@@ -197,7 +203,7 @@ async fn demonstrate_platform_specific() -> Result<(), Box<dyn Error>> {
         println!("🍎 macOS-specific features:");
         println!("   - Core Foundation and IOKit detection enabled");
         println!("   - Metal acceleration available");
-        
+
         // Check for macOS-specific features
         for gpu in hw_info.gpus() {
             if gpu.supports_metal() {
@@ -217,44 +223,47 @@ async fn demonstrate_ai_workload_optimization() -> Result<(), Box<dyn Error>> {
     let hw_info = HardwareInfo::query()?;
 
     println!("🔧 Specialized Hardware Analysis:");
-    
+
     // NPUs
     let npus = hw_info.npus();
     if !npus.is_empty() {
         println!("   🧠 Neural Processing Units: {}", npus.len());
         for npu in npus {
-            println!("      {} {} - {} TOPS", 
-                npu.vendor, 
+            println!(
+                "      {} {} - {} TOPS",
+                npu.vendor,
                 npu.model_name,
                 npu.tops_performance.unwrap_or(0.0)
             );
         }
     }
-    
+
     // TPUs
     let tpus = hw_info.tpus();
     if !tpus.is_empty() {
         println!("   ⚡ Tensor Processing Units: {}", tpus.len());
         for tpu in tpus {
-            println!("      {} {:?} - {:.1} TOPS", 
+            println!(
+                "      {} {:?} - {:.1} TOPS",
                 tpu.vendor,
                 tpu.architecture,
                 tpu.tops_performance.unwrap_or(0.0)
             );
         }
     }
-    
+
     // ARM hardware
     if let Some(arm) = hw_info.arm_hardware() {
         println!("   📱 ARM System: {}", arm.system_type);
     }
-    
+
     // FPGAs
     let fpgas = hw_info.fpgas();
     if !fpgas.is_empty() {
         println!("   🔌 FPGAs: {}", fpgas.len());
         for fpga in fpgas {
-            println!("      {} {} - {} logic elements",
+            println!(
+                "      {} {} - {} logic elements",
                 fpga.vendor,
                 fpga.family,
                 fpga.logic_elements.unwrap_or(0)

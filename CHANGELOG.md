@@ -5,6 +5,48 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.3] - 2026-10-16
+
+### Security
+- `cargo audit` on #6's CI run found 3 advisories in transitive dependencies:
+  `bytes` 1.10.1 (RUSTSEC-2026-0007, integer overflow in `BytesMut::reserve`),
+  `crossbeam-epoch` 0.9.18 (RUSTSEC-2026-0204, invalid pointer dereference),
+  `slab` 0.4.10 (RUSTSEC-2025-0047, out-of-bounds access, also yanked).
+  `cargo update -p bytes -p crossbeam-epoch -p slab` resolves all three;
+  `cargo audit` is clean after.
+
+### Fixed
+- `cargo fmt --all` had never been run against current stable's formatting
+  defaults (no `rustfmt.toml` was ever pinned); applied with no behavior
+  change.
+- All 19 `clippy --all-targets --all-features -- -D warnings` findings:
+  unused import/variable, 3x unnecessary `mut`, 4x `map_or(false, ..)` ->
+  `is_some_and`, missing `Default` impl for `HardwareQueryBuilder`,
+  unnecessary cast, `async_trait`'s double-`must_use` false positive, and
+  `large_enum_variant` on `MonitoringEvent` (left un-boxed: boxing would
+  change public field types, a breaking change this release doesn't make).
+- 2 genuinely dead private items: `HardwareQueryBuilder::include_capabilities`
+  (no setter ever existed, `query()` never read it -- deleted, not an
+  unfinished feature) and 4 GPU-classification helpers plus 1 NPU driver-
+  version helper that are only ever called from Windows-only code paths
+  (now `#[cfg(target_os = "windows")]`, matching their only callers, instead
+  of `#[allow(dead_code)]`).
+- `upper_case_acronyms` on `GPUPassthroughType`/`SecurityFeature`: allowed
+  with a reason comment rather than renaming the public variants (SR-IOV,
+  IOMMU, etc. are the industry names; renaming would be a breaking change).
+- 6 of 7 doctests in `src/lib.rs` and `src/simple.rs` were broken, referencing
+  a builder/monitoring API that no longer exists. Fixed per-doctest: 4 were
+  simply wrong docs (builder chaining, `storage_devices()`/`drive_type()`,
+  `MonitoringConfig`'s current struct-literal + async `on_event`/
+  `start_monitoring` API, `dev_score` instead of a nonexistent
+  `build_performance` field). The `SystemOverview::quick()` one-liner pitch
+  ("formatted system summary") had no `Display` impl backing it at all --
+  added `impl Display for SystemOverview` rather than rewrite the doc,
+  since a working one-line summary is this crate's stated purpose.
+- 2 unrelated dead-code/style lints clippy only surfaced once the lib itself
+  compiled: an unused helper fn and a `field_reassign_with_default` in two
+  examples.
+
 ## [0.2.2] - 2026-10-16
 
 ### Fixed

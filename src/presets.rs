@@ -4,8 +4,8 @@
 //! making it extremely easy for developers to get the information they need
 //! without having to understand all the available hardware types.
 
-use crate::{simple::SystemOverview, builder::HardwareQueryBuilder, Result};
-use serde::{Serialize, Deserialize};
+use crate::{Result, builder::HardwareQueryBuilder, simple::SystemOverview};
+use serde::{Deserialize, Serialize};
 
 /// AI/ML hardware assessment result
 #[derive(Debug, Serialize, Deserialize)]
@@ -192,7 +192,7 @@ impl HardwarePresets {
     pub fn ai_assessment() -> Result<AIHardwareAssessment> {
         let overview = SystemOverview::quick()?;
         let ai_score = overview.ai_score();
-        
+
         let frameworks = Self::assess_ai_frameworks(&overview);
         let model_recommendations = Self::get_model_recommendations(&overview);
         let performance = Self::estimate_ai_performance(&overview);
@@ -210,10 +210,8 @@ impl HardwarePresets {
 
     /// Gaming hardware assessment and recommendations
     pub fn gaming_assessment() -> Result<GamingHardwareAssessment> {
-        let _hw_info = HardwareQueryBuilder::new()
-            .with_gaming_focused()
-            .query()?;
-        
+        let _hw_info = HardwareQueryBuilder::new().with_gaming_focused().query()?;
+
         let overview = SystemOverview::quick()?;
         let gaming_score = Self::calculate_gaming_score(&overview);
         let recommended_settings = Self::get_game_settings(&overview);
@@ -248,10 +246,8 @@ impl HardwarePresets {
 
     /// Server hardware assessment
     pub fn server_assessment() -> Result<ServerHardwareAssessment> {
-        let _hw_info = HardwareQueryBuilder::new()
-            .with_server_focused()
-            .query()?;
-        
+        let _hw_info = HardwareQueryBuilder::new().with_server_focused().query()?;
+
         let overview = SystemOverview::quick()?;
         let server_score = Self::calculate_server_score(&overview);
         let workload_suitability = Self::assess_server_workloads(&overview);
@@ -268,9 +264,13 @@ impl HardwarePresets {
     }
 
     /// Check if system is ready for a specific AI model
-    pub fn check_ai_model_compatibility(_model_name: &str, _params: &str, memory_gb: f64) -> Result<bool> {
+    pub fn check_ai_model_compatibility(
+        _model_name: &str,
+        _params: &str,
+        memory_gb: f64,
+    ) -> Result<bool> {
         let overview = SystemOverview::quick()?;
-        
+
         // Simple compatibility check
         let available_memory = if let Some(gpu) = &overview.gpu {
             gpu.vram_gb
@@ -284,7 +284,7 @@ impl HardwarePresets {
     /// Get quick gaming performance estimate
     pub fn gaming_fps_estimate(resolution: &str, quality: &str) -> Result<u32> {
         let overview = SystemOverview::quick()?;
-        
+
         // Simple FPS estimation based on hardware
         let base_fps = if let Some(gpu) = &overview.gpu {
             if gpu.vram_gb >= 8.0 {
@@ -325,12 +325,12 @@ impl HardwarePresets {
         // PyTorch
         frameworks.push(AIFramework {
             name: "PyTorch".to_string(),
-            compatibility: if overview.gpu.is_some() { 
-                CompatibilityLevel::Excellent 
-            } else { 
-                CompatibilityLevel::Good 
+            compatibility: if overview.gpu.is_some() {
+                CompatibilityLevel::Excellent
+            } else {
+                CompatibilityLevel::Good
             },
-            performance_estimate: if overview.gpu.as_ref().map_or(false, |g| g.ai_capable) {
+            performance_estimate: if overview.gpu.as_ref().is_some_and(|g| g.ai_capable) {
                 PerformanceLevel::Excellent
             } else {
                 PerformanceLevel::Fair
@@ -342,12 +342,12 @@ impl HardwarePresets {
         // TensorFlow
         frameworks.push(AIFramework {
             name: "TensorFlow".to_string(),
-            compatibility: if overview.gpu.is_some() { 
-                CompatibilityLevel::Excellent 
-            } else { 
-                CompatibilityLevel::Good 
+            compatibility: if overview.gpu.is_some() {
+                CompatibilityLevel::Excellent
+            } else {
+                CompatibilityLevel::Good
             },
-            performance_estimate: if overview.gpu.as_ref().map_or(false, |g| g.ai_capable) {
+            performance_estimate: if overview.gpu.as_ref().is_some_and(|g| g.ai_capable) {
                 PerformanceLevel::Excellent
             } else {
                 PerformanceLevel::Fair
@@ -389,38 +389,34 @@ impl HardwarePresets {
                     performance_estimate: PerformanceLevel::Excellent,
                 },
             ],
-            medium_models: vec![
-                ModelRecommendation {
-                    name: "GPT-3.5".to_string(),
-                    parameter_count: "175B".to_string(),
-                    memory_required_gb: 8.0,
-                    feasible: available_vram >= 8.0,
-                    performance_estimate: if available_vram >= 8.0 { 
-                        PerformanceLevel::Good 
-                    } else { 
-                        PerformanceLevel::Poor 
-                    },
+            medium_models: vec![ModelRecommendation {
+                name: "GPT-3.5".to_string(),
+                parameter_count: "175B".to_string(),
+                memory_required_gb: 8.0,
+                feasible: available_vram >= 8.0,
+                performance_estimate: if available_vram >= 8.0 {
+                    PerformanceLevel::Good
+                } else {
+                    PerformanceLevel::Poor
                 },
-            ],
-            large_models: vec![
-                ModelRecommendation {
-                    name: "GPT-4".to_string(),
-                    parameter_count: "1.7T".to_string(),
-                    memory_required_gb: 80.0,
-                    feasible: available_vram >= 80.0,
-                    performance_estimate: if available_vram >= 80.0 { 
-                        PerformanceLevel::Fair 
-                    } else { 
-                        PerformanceLevel::Inadequate 
-                    },
+            }],
+            large_models: vec![ModelRecommendation {
+                name: "GPT-4".to_string(),
+                parameter_count: "1.7T".to_string(),
+                memory_required_gb: 80.0,
+                feasible: available_vram >= 80.0,
+                performance_estimate: if available_vram >= 80.0 {
+                    PerformanceLevel::Fair
+                } else {
+                    PerformanceLevel::Inadequate
                 },
-            ],
+            }],
         }
     }
 
     fn estimate_ai_performance(overview: &SystemOverview) -> AIPerformanceEstimate {
         let has_gpu = overview.gpu.is_some();
-        let gpu_ai_capable = overview.gpu.as_ref().map_or(false, |g| g.ai_capable);
+        let gpu_ai_capable = overview.gpu.as_ref().is_some_and(|g| g.ai_capable);
         let sufficient_memory = overview.memory_gb >= 16.0;
 
         AIPerformanceEstimate {
@@ -459,7 +455,8 @@ impl HardwarePresets {
         }
 
         if overview.memory_gb < 16.0 {
-            optimizations.push("Increase system RAM to 16GB+ for better model performance".to_string());
+            optimizations
+                .push("Increase system RAM to 16GB+ for better model performance".to_string());
         }
 
         if let Some(gpu) = &overview.gpu {
@@ -517,7 +514,7 @@ impl HardwarePresets {
 
     fn get_game_settings(overview: &SystemOverview) -> GameSettings {
         let vram = overview.gpu.as_ref().map_or(0.0, |g| g.vram_gb);
-        
+
         let (resolution, quality, target_fps) = if vram >= 12.0 {
             ("4K", QualityLevel::Ultra, 60)
         } else if vram >= 8.0 {
@@ -551,11 +548,13 @@ impl HardwarePresets {
         }
 
         if overview.cpu.cores < 4 {
-            bottlenecks.push("Low CPU core count may limit performance in modern games".to_string());
+            bottlenecks
+                .push("Low CPU core count may limit performance in modern games".to_string());
         }
 
         if overview.memory_gb < 16.0 {
-            bottlenecks.push("Low system RAM may cause stuttering in memory-intensive games".to_string());
+            bottlenecks
+                .push("Low system RAM may cause stuttering in memory-intensive games".to_string());
         }
 
         if overview.storage.drive_type.to_lowercase().contains("hdd") {
@@ -635,10 +634,10 @@ impl HardwarePresets {
             },
             DevEnvironment {
                 name: "Docker Desktop".to_string(),
-                suitability: if overview.memory_gb >= 8.0 { 
-                    CompatibilityLevel::Excellent 
-                } else { 
-                    CompatibilityLevel::Fair 
+                suitability: if overview.memory_gb >= 8.0 {
+                    CompatibilityLevel::Excellent
+                } else {
+                    CompatibilityLevel::Fair
                 },
                 container_support: true,
                 vm_support: true,
@@ -646,10 +645,10 @@ impl HardwarePresets {
             },
             DevEnvironment {
                 name: "IntelliJ IDEA".to_string(),
-                suitability: if overview.memory_gb >= 16.0 { 
-                    CompatibilityLevel::Excellent 
-                } else { 
-                    CompatibilityLevel::Good 
+                suitability: if overview.memory_gb >= 16.0 {
+                    CompatibilityLevel::Excellent
+                } else {
+                    CompatibilityLevel::Good
                 },
                 container_support: true,
                 vm_support: false,
@@ -661,11 +660,17 @@ impl HardwarePresets {
     fn assess_virtualization(overview: &SystemOverview) -> VirtualizationSupport {
         let hardware_acceleration = overview.cpu.cores >= 4;
         let nested_virtualization = overview.cpu.cores >= 8;
-        let max_vms = if overview.memory_gb >= 32.0 { 4 } else if overview.memory_gb >= 16.0 { 2 } else { 1 };
-        let docker_performance = if overview.memory_gb >= 16.0 { 
-            PerformanceLevel::Excellent 
-        } else { 
-            PerformanceLevel::Good 
+        let max_vms = if overview.memory_gb >= 32.0 {
+            4
+        } else if overview.memory_gb >= 16.0 {
+            2
+        } else {
+            1
+        };
+        let docker_performance = if overview.memory_gb >= 16.0 {
+            PerformanceLevel::Excellent
+        } else {
+            PerformanceLevel::Good
         };
 
         VirtualizationSupport {
@@ -680,17 +685,18 @@ impl HardwarePresets {
         let mut recommendations = Vec::new();
 
         recommendations.push("Git for version control".to_string());
-        
+
         if overview.memory_gb >= 16.0 {
             recommendations.push("Docker for containerized development".to_string());
         }
-        
+
         if overview.cpu.cores >= 8 {
             recommendations.push("Parallel build tools (ninja, etc.)".to_string());
         }
-        
-        recommendations.push("Terminal with good performance (Windows Terminal, iTerm2)".to_string());
-        
+
+        recommendations
+            .push("Terminal with good performance (Windows Terminal, iTerm2)".to_string());
+
         recommendations
     }
 
@@ -748,7 +754,11 @@ impl HardwarePresets {
             },
             WorkloadSuitability {
                 workload_type: "Container Orchestration".to_string(),
-                suitability_score: if overview.cpu.cores >= 16 && overview.memory_gb >= 32.0 { 95 } else { 70 },
+                suitability_score: if overview.cpu.cores >= 16 && overview.memory_gb >= 32.0 {
+                    95
+                } else {
+                    70
+                },
                 max_concurrent_users: None,
                 notes: "Requires high CPU and memory for container management".to_string(),
             },
@@ -756,7 +766,13 @@ impl HardwarePresets {
     }
 
     fn recommend_resource_allocation(overview: &SystemOverview) -> ResourceAllocation {
-        let vm_count = if overview.memory_gb >= 64.0 { 8 } else if overview.memory_gb >= 32.0 { 4 } else { 2 };
+        let vm_count = if overview.memory_gb >= 64.0 {
+            8
+        } else if overview.memory_gb >= 32.0 {
+            4
+        } else {
+            2
+        };
         let memory_per_vm = (overview.memory_gb * 0.8) / (vm_count as f64);
         let cores_per_vm = overview.cpu.cores / vm_count;
         let storage_per_vm = overview.storage.total_gb * 0.7 / (vm_count as f64);
@@ -778,7 +794,9 @@ impl HardwarePresets {
         };
 
         let power_stability = match overview.health.power {
-            crate::simple::PowerStatus::Low | crate::simple::PowerStatus::Normal => QualityLevel::High,
+            crate::simple::PowerStatus::Low | crate::simple::PowerStatus::Normal => {
+                QualityLevel::High
+            }
             crate::simple::PowerStatus::High => QualityLevel::Medium,
             crate::simple::PowerStatus::VeryHigh => QualityLevel::Low,
         };

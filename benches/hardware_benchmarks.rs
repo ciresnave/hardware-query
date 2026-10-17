@@ -1,6 +1,6 @@
-use criterion::{criterion_group, criterion_main, Criterion};
-use std::hint::black_box;
+use criterion::{Criterion, criterion_group, criterion_main};
 use hardware_query::*;
+use std::hint::black_box;
 
 fn cpu_benchmark(c: &mut Criterion) {
     c.bench_function("cpu_query", |b| {

@@ -335,7 +335,7 @@ impl ThermalInfo {
         // Simple prediction algorithm - would be enhanced with ML models
         let critical_threshold = 90.0;
         let temp_trend = self.calculate_temperature_trend();
-        
+
         // Factor in workload intensity
         let projected_temp_increase = workload_intensity * 10.0; // Simplified calculation
         let projected_max_temp = max_temp + projected_temp_increase + temp_trend;
@@ -410,15 +410,19 @@ impl ThermalInfo {
         }
 
         // Check fan utilization
-        let avg_fan_speed = self.fans
+        let avg_fan_speed = self
+            .fans
             .iter()
             .filter_map(|fan| fan.speed_percent)
-            .fold(0.0, |acc, speed| acc + speed) / self.fans.len().max(1) as f32;
+            .fold(0.0, |acc, speed| acc + speed)
+            / self.fans.len().max(1) as f32;
 
         if avg_fan_speed > 80.0 {
             recommendations.push(CoolingRecommendation {
                 recommendation_type: CoolingRecommendationType::AdditionalFans,
-                description: "Current fans are running at high speeds. Consider adding more case fans".to_string(),
+                description:
+                    "Current fans are running at high speeds. Consider adding more case fans"
+                        .to_string(),
                 expected_temp_reduction: Some(4.0),
                 difficulty: ImplementationDifficulty::Moderate,
                 cost_category: CostCategory::Low,
@@ -430,7 +434,8 @@ impl ThermalInfo {
             if cpu_temp > 85.0 {
                 recommendations.push(CoolingRecommendation {
                     recommendation_type: CoolingRecommendationType::CPUCoolerUpgrade,
-                    description: "CPU temperatures are high. Consider upgrading CPU cooler".to_string(),
+                    description: "CPU temperatures are high. Consider upgrading CPU cooler"
+                        .to_string(),
                     expected_temp_reduction: Some(8.0),
                     difficulty: ImplementationDifficulty::Moderate,
                     cost_category: CostCategory::Medium,
@@ -458,7 +463,7 @@ impl ThermalInfo {
     pub fn calculate_sustained_performance(&self) -> f64 {
         let max_temp = self.max_temperature().unwrap_or(0.0);
         let critical_temp = 90.0;
-        
+
         if max_temp < 70.0 {
             1.0 // Full performance
         } else if max_temp < 80.0 {
@@ -495,7 +500,8 @@ impl ThermalInfo {
 
         for sensor in &self.sensors {
             if sensor.temperature_history.len() >= 3 {
-                let recent_temps: Vec<f32> = sensor.temperature_history
+                let recent_temps: Vec<f32> = sensor
+                    .temperature_history
                     .iter()
                     .rev()
                     .take(3)

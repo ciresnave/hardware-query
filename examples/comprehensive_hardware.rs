@@ -89,15 +89,16 @@ fn main() -> Result<(), Box<dyn Error>> {
 
     // Display specialized hardware
     println!("\n--- Specialized Hardware ---");
-    
+
     // NPUs
     let npus = hw_info.npus();
     if !npus.is_empty() {
         println!("NPUs found: {}", npus.len());
         for (i, npu) in npus.iter().enumerate() {
-            println!("  {}. {} {} - {} TOPS", 
+            println!(
+                "  {}. {} {} - {} TOPS",
                 i + 1,
-                npu.vendor, 
+                npu.vendor,
                 npu.model_name,
                 npu.tops_performance.unwrap_or(0.0)
             );
@@ -105,13 +106,14 @@ fn main() -> Result<(), Box<dyn Error>> {
     } else {
         println!("No NPUs detected");
     }
-    
+
     // TPUs
     let tpus = hw_info.tpus();
     if !tpus.is_empty() {
         println!("TPUs found: {}", tpus.len());
         for (i, tpu) in tpus.iter().enumerate() {
-            println!("  {}. {} {:?} - {:.1} TOPS", 
+            println!(
+                "  {}. {} {:?} - {:.1} TOPS",
                 i + 1,
                 tpu.vendor,
                 tpu.architecture,
@@ -121,18 +123,19 @@ fn main() -> Result<(), Box<dyn Error>> {
     } else {
         println!("No TPUs detected");
     }
-    
+
     // ARM hardware
     if let Some(arm) = hw_info.arm_hardware() {
         println!("ARM System: {}", arm.system_type);
     }
-    
+
     // FPGAs
     let fpgas = hw_info.fpgas();
     if !fpgas.is_empty() {
         println!("FPGAs found: {}", fpgas.len());
         for (i, fpga) in fpgas.iter().enumerate() {
-            println!("  {}. {} {} - {} logic elements",
+            println!(
+                "  {}. {} {} - {} logic elements",
                 i + 1,
                 fpga.vendor,
                 fpga.family,

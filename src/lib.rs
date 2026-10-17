@@ -11,7 +11,7 @@
 //!
 //! ```rust
 //! use hardware_query::SystemOverview;
-//! 
+//!
 //! # fn main() -> Result<(), Box<dyn std::error::Error>> {
 //! let overview = SystemOverview::quick()?;
 //! println!("{}", overview);  // Formatted system summary with health status
@@ -35,11 +35,11 @@
 //! // For gaming applications  
 //! let gaming_assessment = HardwarePresets::gaming_assessment()?;
 //! println!("Gaming Score: {}/100", gaming_assessment.gaming_score);
-//! println!("Recommended Settings: {}", gaming_assessment.recommended_settings);
+//! println!("Recommended Settings: {:?}", gaming_assessment.recommended_settings);
 //!
 //! // For development environments
 //! let dev_assessment = HardwarePresets::developer_assessment()?;
-//! println!("Build Performance: {:?}", dev_assessment.build_performance);
+//! println!("Dev Score: {}/100", dev_assessment.dev_score);
 //! # Ok(())
 //! # }
 //! ```
@@ -55,17 +55,17 @@
 //! // Get basic system info
 //! let basic_info = HardwareQueryBuilder::new()
 //!     .with_basic()
-//!     .cpu_and_memory()?;
+//!     .query()?;
 //!
 //! // Get AI-focused hardware info
 //! let ai_info = HardwareQueryBuilder::new()
 //!     .with_ai_focused()
-//!     .gpu_and_accelerators()?;
+//!     .query()?;
 //!
 //! // Get everything for system monitoring
 //! let monitoring_info = HardwareQueryBuilder::new()
-//!     .with_monitoring()
-//!     .all_hardware()?;
+//!     .with_all()
+//!     .query()?;
 //! # Ok(())
 //! # }
 //! ```
@@ -97,7 +97,7 @@
 //!
 //! // Analyze GPU capabilities for AI workloads
 //! for gpu in hw_info.gpus() {
-//!     println!("GPU: {} {} - {} GB VRAM", 
+//!     println!("GPU: {} {} - {} GB VRAM",
 //!         gpu.vendor(), gpu.model_name(), gpu.memory_gb());
 //!     
 //!     if gpu.supports_cuda() {
@@ -121,11 +121,11 @@
 //! );
 //!
 //! // Storage performance characteristics
-//! for storage in hw_info.storage() {
+//! for storage in hw_info.storage_devices() {
 //!     println!("Storage: {} - {} GB ({})",
 //!         storage.model(),
 //!         storage.capacity_gb(),
-//!         if storage.is_ssd() { "SSD" } else { "HDD" }
+//!         storage.drive_type()
 //!     );
 //! }
 //! # Ok(())
@@ -137,31 +137,37 @@
 //! For applications that need continuous hardware monitoring:
 //!
 //! ```rust,no_run
-//! #[cfg(feature = "monitoring")]
-//! use hardware_query::{HardwareMonitor, MonitoringConfig};
+//! # #[cfg(feature = "monitoring")]
+//! use hardware_query::{HardwareMonitor, MonitoringConfig, MonitoringEvent};
 //!
 //! # #[cfg(feature = "monitoring")]
-//! # fn main() -> Result<(), Box<dyn std::error::Error>> {
-//! let config = MonitoringConfig::new()
-//!     .with_cpu_monitoring(true)
-//!     .with_thermal_monitoring(true)
-//!     .with_interval_ms(1000);
+//! # #[tokio::main]
+//! # async fn main() -> Result<(), Box<dyn std::error::Error>> {
+//! let config = MonitoringConfig {
+//!     update_interval: std::time::Duration::from_secs(1),
+//!     thermal_threshold: 80.0,
+//!     ..Default::default()
+//! };
 //!
-//! let mut monitor = HardwareMonitor::new(config);
+//! let monitor = HardwareMonitor::with_config(config);
 //!
-//! monitor.start_monitoring(|event| {
+//! monitor.on_event(|event| {
 //!     match event {
-//!         hardware_query::MonitoringEvent::TemperatureAlert { component, temp } => {
-//!             println!("Warning: {} temperature: {}°C", component, temp);
+//!         MonitoringEvent::ThermalAlert { sensor_name, temperature, .. } => {
+//!             println!("Warning: {} temperature: {}°C", sensor_name, temperature);
 //!         }
-//!         hardware_query::MonitoringEvent::CpuUsageHigh { usage } => {
-//!             println!("High CPU usage: {}%", usage);
+//!         MonitoringEvent::PowerAlert { current_power, .. } => {
+//!             println!("High power draw: {}W", current_power);
 //!         }
 //!         _ => {}
 //!     }
-//! })?;
+//! }).await;
+//!
+//! monitor.start_monitoring().await?;
 //! # Ok(())
 //! # }
+//! # #[cfg(not(feature = "monitoring"))]
+//! # fn main() {}
 //! ```
 //!
 //! ## Feature Flags
@@ -178,9 +184,11 @@
 //!
 //! All APIs work consistently across platforms, with graceful degradation when specific hardware isn't available.
 
+mod arm;
 mod battery;
 mod cpu;
 mod error;
+mod fpga;
 mod gpu;
 mod hardware_info;
 mod memory;
@@ -188,47 +196,58 @@ mod network;
 mod npu;
 mod pci;
 pub mod platform;
+mod power;
 mod storage;
 mod thermal;
 mod tpu;
 mod usb;
-mod arm;
-mod fpga;
-mod power;
 mod virtualization;
 
 #[cfg(feature = "monitoring")]
 mod monitoring;
 
 // Simplified API modules
-pub mod simple;
 pub mod builder;
 pub mod presets;
+pub mod simple;
 
+pub use arm::{ARMHardwareInfo, ARMSystemType, PowerInfo};
 pub use battery::{BatteryInfo, BatteryStatus};
 pub use cpu::{CPUFeature, CPUInfo, CPUVendor};
 pub use error::{HardwareQueryError, Result};
+pub use fpga::{FPGAFamily, FPGAInfo, FPGAInterface, FPGAVendor};
 pub use gpu::{GPUInfo, GPUType, GPUVendor};
 pub use hardware_info::HardwareInfo;
 pub use memory::{MemoryInfo, MemoryType};
 pub use network::{NetworkInfo, NetworkType};
-pub use npu::{NPUInfo, NPUVendor, NPUType, NPUArchitecture};
+pub use npu::{NPUArchitecture, NPUInfo, NPUType, NPUVendor};
 pub use pci::PCIDevice;
+pub use power::{
+    OptimizationCategory, PowerOptimization, PowerProfile, PowerState, ThrottlingRisk,
+};
 pub use storage::{StorageInfo, StorageType};
-pub use thermal::{FanInfo, ThermalInfo, ThermalSensor, ThrottlingPrediction, CoolingRecommendation, ThrottlingSeverity};
-pub use tpu::{TPUInfo, TPUVendor, TPUArchitecture, TPUConnectionType};
+pub use thermal::{
+    CoolingRecommendation, FanInfo, ThermalInfo, ThermalSensor, ThrottlingPrediction,
+    ThrottlingSeverity,
+};
+pub use tpu::{TPUArchitecture, TPUConnectionType, TPUInfo, TPUVendor};
 pub use usb::USBDevice;
-pub use arm::{ARMHardwareInfo, ARMSystemType, PowerInfo};
-pub use fpga::{FPGAInfo, FPGAVendor, FPGAFamily, FPGAInterface};
-pub use power::{PowerProfile, PowerState, ThrottlingRisk, PowerOptimization, OptimizationCategory};
-pub use virtualization::{VirtualizationInfo, VirtualizationType, ContainerRuntime, ResourceLimits};
+pub use virtualization::{
+    ContainerRuntime, ResourceLimits, VirtualizationInfo, VirtualizationType,
+};
 
 #[cfg(feature = "monitoring")]
-pub use monitoring::{HardwareMonitor, MonitoringConfig, MonitoringEvent, MonitoringStats, MonitoringCallback};
+pub use monitoring::{
+    HardwareMonitor, MonitoringCallback, MonitoringConfig, MonitoringEvent, MonitoringStats,
+};
 
 // Simplified API exports - these are the recommended entry points for most users
-pub use simple::{SystemOverview, SimpleCPU, SimpleGPU, SimpleStorage, SystemHealth, 
-                 HealthStatus, TemperatureStatus, PowerStatus};
-pub use builder::{HardwareQueryBuilder, CustomHardwareInfo};
-pub use presets::{HardwarePresets, AIHardwareAssessment, GamingHardwareAssessment, 
-                  DeveloperHardwareAssessment, ServerHardwareAssessment};
+pub use builder::{CustomHardwareInfo, HardwareQueryBuilder};
+pub use presets::{
+    AIHardwareAssessment, DeveloperHardwareAssessment, GamingHardwareAssessment, HardwarePresets,
+    ServerHardwareAssessment,
+};
+pub use simple::{
+    HealthStatus, PowerStatus, SimpleCPU, SimpleGPU, SimpleStorage, SystemHealth, SystemOverview,
+    TemperatureStatus,
+};

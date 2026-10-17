@@ -5,7 +5,7 @@ use std::collections::HashMap;
 #[cfg(target_os = "windows")]
 use wmi::{COMLibrary, WMIConnection};
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "macos"))]
 use std::process::Command;
 
 /// NPU vendor information
@@ -43,11 +43,11 @@ impl std::fmt::Display for NPUVendor {
 /// NPU type classification
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum NPUType {
-    Integrated,     // Built into CPU/SoC
-    Discrete,       // Separate accelerator card
-    USB,           // USB-connected device
-    PCIe,          // PCIe card
-    M2,            // M.2 module
+    Integrated, // Built into CPU/SoC
+    Discrete,   // Separate accelerator card
+    USB,        // USB-connected device
+    PCIe,       // PCIe card
+    M2,         // M.2 module
     Unknown,
 }
 
@@ -73,46 +73,46 @@ pub enum NPUArchitecture {
 pub struct NPUInfo {
     /// NPU vendor
     pub vendor: NPUVendor,
-    
+
     /// NPU model name
     pub model_name: String,
-    
+
     /// NPU type
     pub npu_type: NPUType,
-    
+
     /// NPU architecture
     pub architecture: NPUArchitecture,
-    
+
     /// Performance in TOPS (Tera Operations Per Second)
     pub tops_performance: Option<f32>,
-    
+
     /// Memory size in MB (if applicable)
     pub memory_mb: Option<u64>,
-    
+
     /// Driver version
     pub driver_version: Option<String>,
-    
+
     /// Firmware version
     pub firmware_version: Option<String>,
-    
+
     /// PCI device ID (if applicable)
     pub pci_device_id: Option<String>,
-    
+
     /// USB device ID (if applicable)
     pub usb_device_id: Option<String>,
-    
+
     /// Supported frameworks
     pub supported_frameworks: Vec<String>,
-    
+
     /// Power consumption in watts
     pub power_consumption: Option<f32>,
-    
+
     /// Operating temperature in Celsius
     pub temperature: Option<f32>,
-    
+
     /// Clock frequency in MHz
     pub clock_frequency: Option<u32>,
-    
+
     /// Additional capabilities
     pub capabilities: HashMap<String, String>,
 }
@@ -121,7 +121,7 @@ impl NPUInfo {
     /// Query all available NPUs in the system
     pub fn query_all() -> Result<Vec<NPUInfo>> {
         let mut npus = Vec::new();
-        
+
         // Detect various NPU types
         npus.extend(Self::detect_intel_npus()?);
         npus.extend(Self::detect_qualcomm_npus()?);
@@ -130,37 +130,40 @@ impl NPUInfo {
         npus.extend(Self::detect_google_tpus()?);
         npus.extend(Self::detect_usb_npus()?);
         npus.extend(Self::detect_pcie_npus()?);
-        
+
         Ok(npus)
     }
-    
+
     /// Detect Intel NPUs (Movidius, GNA, XDNA)
     fn detect_intel_npus() -> Result<Vec<NPUInfo>> {
         let mut npus = Vec::new();
-        
+
         // Intel Neural Compute Stick detection
         npus.extend(Self::detect_intel_ncs()?);
-        
+
         // Intel GNA (Gaussian Neural Accelerator)
         npus.extend(Self::detect_intel_gna()?);
-        
+
         // Intel XDNA (Meteor Lake and newer)
         npus.extend(Self::detect_intel_xdna()?);
-        
+
         Ok(npus)
     }
-    
+
     fn detect_intel_ncs() -> Result<Vec<NPUInfo>> {
+        #[cfg_attr(not(target_os = "linux"), allow(unused_mut))]
         let mut npus = Vec::new();
-        
+
         #[cfg(target_os = "linux")]
         {
             // Check for Movidius devices via lsusb
             if let Ok(output) = Command::new("lsusb").output() {
                 let output_str = String::from_utf8_lossy(&output.stdout);
                 for line in output_str.lines() {
-                    if line.contains("03e7") { // Intel Movidius VID
-                        if line.contains("2485") { // Neural Compute Stick 2
+                    if line.contains("03e7") {
+                        // Intel Movidius VID
+                        if line.contains("2485") {
+                            // Neural Compute Stick 2
                             npus.push(NPUInfo {
                                 vendor: NPUVendor::Intel,
                                 model_name: "Intel Neural Compute Stick 2".to_string(),
@@ -181,7 +184,8 @@ impl NPUInfo {
                                 clock_frequency: None,
                                 capabilities: HashMap::new(),
                             });
-                        } else if line.contains("f63b") { // Neural Compute Stick 1
+                        } else if line.contains("f63b") {
+                            // Neural Compute Stick 1
                             npus.push(NPUInfo {
                                 vendor: NPUVendor::Intel,
                                 model_name: "Intel Neural Compute Stick".to_string(),
@@ -204,7 +208,7 @@ impl NPUInfo {
                 }
             }
         }
-        
+
         #[cfg(target_os = "windows")]
         {
             // Windows detection via WMI and device manager
@@ -244,13 +248,14 @@ impl NPUInfo {
                 }
             }
         }
-        
+
         Ok(npus)
     }
-    
+
     fn detect_intel_gna() -> Result<Vec<NPUInfo>> {
+        #[cfg_attr(target_os = "macos", allow(unused_mut))]
         let mut npus = Vec::new();
-        
+
         // Intel GNA detection - typically integrated in Tiger Lake and newer
         #[cfg(target_os = "linux")]
         {
@@ -262,7 +267,7 @@ impl NPUInfo {
                     npu_type: NPUType::Integrated,
                     architecture: NPUArchitecture::IntelGNA,
                     tops_performance: Some(1.0), // ~1 TOPS for inference
-                    memory_mb: None, // Uses system memory
+                    memory_mb: None,             // Uses system memory
                     driver_version: Self::get_intel_gna_driver_version(),
                     firmware_version: None,
                     pci_device_id: None,
@@ -281,7 +286,7 @@ impl NPUInfo {
                 });
             }
         }
-        
+
         #[cfg(target_os = "windows")]
         {
             // Windows GNA detection via device manager
@@ -319,13 +324,14 @@ impl NPUInfo {
                 }
             }
         }
-        
+
         Ok(npus)
     }
-    
+
     fn detect_intel_xdna() -> Result<Vec<NPUInfo>> {
+        #[cfg_attr(not(target_os = "windows"), allow(unused_mut))]
         let mut npus = Vec::new();
-        
+
         // Intel XDNA (Meteor Lake and newer integrated NPU)
         #[cfg(target_os = "windows")]
         {
@@ -337,7 +343,9 @@ impl NPUInfo {
                         for device in results {
                             if let Some(name) = device.get("Name") {
                                 let name_str = format!("{name:?}");
-                                if name_str.contains("Intel") && (name_str.contains("NPU") || name_str.contains("Neural")) {
+                                if name_str.contains("Intel")
+                                    && (name_str.contains("NPU") || name_str.contains("Neural"))
+                                {
                                     npus.push(NPUInfo {
                                         vendor: NPUVendor::Intel,
                                         model_name: "Intel XDNA NPU".to_string(),
@@ -370,11 +378,12 @@ impl NPUInfo {
                 }
             }
         }
-        
+
         Ok(npus)
     }
-    
+
     // Helper functions for driver version detection
+    #[cfg(any(target_os = "linux", target_os = "windows"))]
     fn get_intel_ncs_driver_version() -> Option<String> {
         // Try to get OpenVINO version as proxy for NCS driver
         #[cfg(target_os = "linux")]
@@ -390,7 +399,8 @@ impl NPUInfo {
         }
         None
     }
-    
+
+    #[cfg(any(target_os = "linux", target_os = "windows"))]
     fn get_intel_gna_driver_version() -> Option<String> {
         // Check for Intel GNA driver version
         #[cfg(target_os = "linux")]
@@ -401,18 +411,19 @@ impl NPUInfo {
         }
         None
     }
-    
+
+    #[cfg(target_os = "windows")]
     fn get_intel_npu_driver_version() -> Option<String> {
         // Windows: Check registry or device manager for NPU driver version
         None // Placeholder - would need Windows registry access
     }
-    
+
     // Placeholder implementations for other vendors
     fn detect_qualcomm_npus() -> Result<Vec<NPUInfo>> {
         // Note: Qualcomm Hexagon NPU detection requires proprietary Qualcomm SDK
         Ok(Vec::new())
     }
-    
+
     fn detect_apple_neural_engine() -> Result<Vec<NPUInfo>> {
         #[cfg(target_os = "macos")]
         {
@@ -424,7 +435,7 @@ impl NPUInfo {
                 let cpu_brand = String::from_utf8_lossy(&output.stdout);
                 if cpu_brand.contains("Apple M") {
                     let mut npus = Vec::new();
-                    
+
                     // Determine performance based on chip
                     let (tops, model_name) = if cpu_brand.contains("M1") {
                         (15.8, "Apple Neural Engine (M1)")
@@ -435,7 +446,7 @@ impl NPUInfo {
                     } else {
                         (15.8, "Apple Neural Engine")
                     };
-                    
+
                     npus.push(NPUInfo {
                         vendor: NPUVendor::Apple,
                         model_name: model_name.to_string(),
@@ -461,57 +472,58 @@ impl NPUInfo {
                             ("convolution".to_string(), "true".to_string()),
                         ]),
                     });
-                    
+
                     return Ok(npus);
                 }
             }
         }
         Ok(Vec::new())
     }
-    
+
     fn detect_amd_npus() -> Result<Vec<NPUInfo>> {
         // Note: AMD Ryzen AI NPU detection requires AMD ROCm drivers and SDK
         Ok(Vec::new())
     }
-    
+
     fn detect_google_tpus() -> Result<Vec<NPUInfo>> {
         // Note: Google Coral Edge TPU detection requires libcoral and Edge TPU runtime
         Ok(Vec::new())
     }
-    
+
     fn detect_usb_npus() -> Result<Vec<NPUInfo>> {
         // Note: Generic USB NPU detection requires device-specific drivers
         Ok(Vec::new())
     }
-    
+
     fn detect_pcie_npus() -> Result<Vec<NPUInfo>> {
         // Note: PCIe NPU detection requires device-specific identification methods
         Ok(Vec::new())
     }
-    
+
     /// Get NPU vendor
     pub fn vendor(&self) -> &NPUVendor {
         &self.vendor
     }
-    
+
     /// Get NPU model name
     pub fn model_name(&self) -> &str {
         &self.model_name
     }
-    
+
     /// Get NPU type
     pub fn npu_type(&self) -> &NPUType {
         &self.npu_type
     }
-    
+
     /// Get performance in TOPS
     pub fn tops_performance(&self) -> Option<f32> {
         self.tops_performance
     }
-    
+
     /// Check if NPU supports a specific framework
     pub fn supports_framework(&self, framework: &str) -> bool {
-        self.supported_frameworks.iter()
+        self.supported_frameworks
+            .iter()
             .any(|f| f.to_lowercase().contains(&framework.to_lowercase()))
     }
 }

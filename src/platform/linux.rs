@@ -248,7 +248,7 @@ impl LinuxGPUInfo {
             .args(["-v", "-s", "$(lspci | grep VGA | cut -d' ' -f1)"])
             .output()
         {
-            let output_str = String::from_utf8_lossy(&output.stdout);
+            let _output_str = String::from_utf8_lossy(&output.stdout);
             // Parse lspci output - this is a simplified implementation
             // A full implementation would parse the complete lspci output
         }
@@ -298,7 +298,7 @@ impl LinuxGPUInfo {
 
     /// Query AMD GPU information using rocm-smi
     fn query_amd_gpus() -> Result<Vec<Self>> {
-        let mut gpus = Vec::new();
+        let gpus = Vec::new();
 
         if let Ok(output) = Command::new("rocm-smi")
             .args(["--showproductname", "--showdriverversion"])

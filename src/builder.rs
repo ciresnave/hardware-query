@@ -5,15 +5,14 @@
 //! overhead of collecting all available hardware data.
 
 use crate::{
-    HardwareInfo, CPUInfo, GPUInfo, MemoryInfo, StorageInfo, NetworkInfo, 
-    BatteryInfo, ThermalInfo, PCIDevice, USBDevice, VirtualizationInfo,
-    Result,
+    BatteryInfo, CPUInfo, GPUInfo, HardwareInfo, MemoryInfo, NetworkInfo, PCIDevice, Result,
+    StorageInfo, ThermalInfo, USBDevice, VirtualizationInfo,
 };
 
 #[cfg(feature = "monitoring")]
 use crate::PowerProfile;
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 /// Hardware query builder for selective information gathering
 pub struct HardwareQueryBuilder {
@@ -27,8 +26,7 @@ pub struct HardwareQueryBuilder {
     include_pci: bool,
     include_usb: bool,
     include_virtualization: bool,
-    include_capabilities: bool,
-    
+
     #[cfg(feature = "monitoring")]
     include_power: bool,
 }
@@ -46,10 +44,10 @@ pub struct CustomHardwareInfo {
     pub pci_devices: Vec<PCIDevice>,
     pub usb_devices: Vec<USBDevice>,
     pub virtualization: Option<VirtualizationInfo>,
-    
+
     #[cfg(feature = "monitoring")]
     pub power_profile: Option<PowerProfile>,
-    
+
     /// Timestamp when this information was collected
     pub timestamp: std::time::SystemTime,
     /// Query execution time in milliseconds
@@ -72,8 +70,7 @@ impl HardwareQueryBuilder {
             include_pci: false,
             include_usb: false,
             include_virtualization: false,
-            include_capabilities: false,
-            
+
             #[cfg(feature = "monitoring")]
             include_power: false,
         }
@@ -158,12 +155,12 @@ impl HardwareQueryBuilder {
         self.include_pci = true;
         self.include_usb = true;
         self.include_virtualization = true;
-        
+
         #[cfg(feature = "monitoring")]
         {
             self.include_power = true;
         }
-        
+
         self
     }
 
@@ -182,12 +179,12 @@ impl HardwareQueryBuilder {
         self.include_memory = true;
         self.include_thermal = true;
         self.include_virtualization = true;
-        
+
         #[cfg(feature = "monitoring")]
         {
             self.include_power = true;
         }
-        
+
         self
     }
 
@@ -210,17 +207,17 @@ impl HardwareQueryBuilder {
         self.include_thermal = true;
         self.include_pci = true;
         self.include_virtualization = true;
-        
+
         #[cfg(feature = "monitoring")]
         {
             self.include_power = true;
         }
-        
+
         self
     }
 
     /// Filter GPUs by a custom predicate  
-    pub fn filter_gpus<F>(self, _filter: F) -> Self 
+    pub fn filter_gpus<F>(self, _filter: F) -> Self
     where
         F: Fn(&GPUInfo) -> bool + 'static,
     {
@@ -229,7 +226,7 @@ impl HardwareQueryBuilder {
     }
 
     /// Filter storage devices by a custom predicate
-    pub fn filter_storage<F>(self, _filter: F) -> Self 
+    pub fn filter_storage<F>(self, _filter: F) -> Self
     where
         F: Fn(&StorageInfo) -> bool + 'static,
     {
@@ -238,7 +235,7 @@ impl HardwareQueryBuilder {
     }
 
     /// Filter network interfaces by a custom predicate
-    pub fn filter_network<F>(self, _filter: F) -> Self 
+    pub fn filter_network<F>(self, _filter: F) -> Self
     where
         F: Fn(&NetworkInfo) -> bool + 'static,
     {
@@ -250,13 +247,13 @@ impl HardwareQueryBuilder {
     pub fn query(self) -> Result<CustomHardwareInfo> {
         let start_time = std::time::Instant::now();
         let timestamp = std::time::SystemTime::now();
-        
+
         // Track which components were requested
         let mut requested_components = Vec::new();
-        
+
         // Get full hardware info first (we'll optimize this later)
         let full_hw = HardwareInfo::query()?;
-        
+
         // Extract requested components
         let cpu = if self.include_cpu {
             requested_components.push("CPU".to_string());
@@ -349,10 +346,10 @@ impl HardwareQueryBuilder {
             pci_devices,
             usb_devices,
             virtualization,
-            
+
             #[cfg(feature = "monitoring")]
             power_profile,
-            
+
             timestamp,
             query_time_ms,
             requested_components,
@@ -366,10 +363,18 @@ impl HardwareQueryBuilder {
     }
 }
 
+impl Default for HardwareQueryBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl CustomHardwareInfo {
     /// Check if a specific component was included in the query
     pub fn has_component(&self, component: &str) -> bool {
-        self.requested_components.iter().any(|c| c.eq_ignore_ascii_case(component))
+        self.requested_components
+            .iter()
+            .any(|c| c.eq_ignore_ascii_case(component))
     }
 
     /// Get the total number of components that were queried

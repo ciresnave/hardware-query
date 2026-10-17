@@ -3,12 +3,12 @@
 //! This module provides continuous monitoring capabilities for hardware metrics,
 //! with configurable update intervals and event-driven notifications.
 
-use crate::{HardwareInfo, ThermalInfo, PowerProfile, Result, HardwareQueryError};
+use crate::{HardwareInfo, HardwareQueryError, PowerProfile, Result, ThermalInfo};
 use async_trait::async_trait;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use std::time::{Duration, Instant};
-use tokio::sync::{broadcast, RwLock, Mutex};
+use tokio::sync::{Mutex, RwLock, broadcast};
 use tokio::time::interval;
 
 /// Hardware monitoring configuration
@@ -46,6 +46,10 @@ impl Default for MonitoringConfig {
 
 /// Hardware monitoring event
 #[derive(Debug, Clone, Serialize, Deserialize)]
+// Boxing MetricsUpdate's fields to shrink the enum would change the public
+// field types (Option<T> -> Box<Option<T>>), a breaking change this isn't
+// the release for.
+#[allow(clippy::large_enum_variant)]
 pub enum MonitoringEvent {
     /// Thermal threshold exceeded
     ThermalAlert {
@@ -118,6 +122,7 @@ pub struct MonitoringStats {
 
 /// Hardware monitoring callback trait
 #[async_trait]
+#[allow(clippy::double_must_use)] // false positive: async_trait's generated Future is already must_use
 pub trait MonitoringCallback: Send + Sync {
     async fn on_event(&self, event: &MonitoringEvent);
 }
@@ -171,7 +176,7 @@ impl HardwareMonitor {
     /// Create a new hardware monitor with custom configuration
     pub fn with_config(config: MonitoringConfig) -> Self {
         let (event_sender, _) = broadcast::channel(1000);
-        
+
         Self {
             config,
             callbacks: Arc::new(Mutex::new(Vec::new())),
@@ -201,7 +206,7 @@ impl HardwareMonitor {
     }
 
     /// Add a simple closure-based callback
-    pub async fn on_event<F>(&self, callback: F) 
+    pub async fn on_event<F>(&self, callback: F)
     where
         F: Fn(&MonitoringEvent) + Send + Sync + 'static,
     {
@@ -220,7 +225,8 @@ impl HardwareMonitor {
                     // For now, we'll trigger on any thermal alert above threshold
                 }
             }
-        }).await;
+        })
+        .await;
     }
 
     /// Add a power threshold callback
@@ -234,7 +240,8 @@ impl HardwareMonitor {
                     // This is a simplified version - in practice we'd pass the power profile
                 }
             }
-        }).await;
+        })
+        .await;
     }
 
     /// Subscribe to monitoring events
@@ -248,7 +255,7 @@ impl HardwareMonitor {
             let mut running = self.running.write().await;
             if *running {
                 return Err(HardwareQueryError::InvalidConfiguration(
-                    "Monitoring is already running".to_string()
+                    "Monitoring is already running".to_string(),
                 ));
             }
             *running = true;
@@ -320,8 +327,9 @@ impl HardwareMonitor {
                     match PowerProfile::query() {
                         Ok(profile) => {
                             // Check for power alerts
-                            if let (Some(current_power), Some(threshold)) = 
-                                (profile.total_power_draw, config.power_threshold) {
+                            if let (Some(current_power), Some(threshold)) =
+                                (profile.total_power_draw, config.power_threshold)
+                            {
                                 if current_power >= threshold {
                                     events.push(MonitoringEvent::PowerAlert {
                                         current_power,
@@ -376,7 +384,7 @@ impl HardwareMonitor {
                 {
                     let mut stats = stats.write().await;
                     stats.total_events += events.len() as u64;
-                    
+
                     for event in &events {
                         match event {
                             MonitoringEvent::ThermalAlert { .. } => stats.thermal_alerts += 1,
@@ -390,12 +398,12 @@ impl HardwareMonitor {
                     stats.last_update = std::time::SystemTime::now();
                     let update_duration = update_start.elapsed();
                     update_times.push(update_duration);
-                    
+
                     // Keep only last 100 update times for average calculation
                     if update_times.len() > 100 {
                         update_times.remove(0);
                     }
-                    
+
                     if !update_times.is_empty() {
                         let total_time: Duration = update_times.iter().sum();
                         stats.average_update_interval = total_time / update_times.len() as u32;
