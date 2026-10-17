@@ -97,14 +97,23 @@ fn test_ai_readiness_assessment() {
     // AI score should be valid
     assert!(ai_score <= 100, "AI score should be <= 100");
 
-    // If AI ready, score should be reasonably high
+    // is_ai_ready() is an OR of 3 independent signals (cpu.ai_capable,
+    // gpu.ai_capable, memory_gb >= 8.0), each with its own weight in
+    // ai_score(). The weakest signal alone (memory in [8,16) GB, <4 cores,
+    // no AI-capable CPU/GPU) floors at 15 points (the memory-only tier) --
+    // that's the only bound ai_score()'s current point allocation actually
+    // guarantees, so that's what these assert, not a higher "should be
+    // reasonably high" number. Observed failing at >=30 on a real
+    // macos-latest CI runner (aarch64, no AI-capable CPU features detected,
+    // memory alone triggering readiness) -- not a flaky threshold, the
+    // old bound was mathematically unreachable via that branch.
     if ai_ready {
-        assert!(ai_score >= 30, "If AI ready, score should be at least 30");
+        assert!(ai_score >= 15, "If AI ready, score should be at least 15");
     }
 
     // If high memory (>= 8GB), should contribute to AI readiness
     if overview.memory_gb >= 8.0 {
-        assert!(ai_score >= 20, "High memory should contribute to AI score");
+        assert!(ai_score >= 15, "High memory should contribute to AI score");
     }
 }
 
