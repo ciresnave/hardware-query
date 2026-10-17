@@ -212,10 +212,10 @@ impl FPGAInfo {
     }
 
     fn read_hex_file(path: &Path) -> Result<Option<u32>> {
-        if let Ok(content) = fs::read_to_string(path) {
-            if let Ok(value) = u32::from_str_radix(content.trim().trim_start_matches("0x"), 16) {
-                return Ok(Some(value));
-            }
+        if let Ok(content) = fs::read_to_string(path)
+            && let Ok(value) = u32::from_str_radix(content.trim().trim_start_matches("0x"), 16)
+        {
+            return Ok(Some(value));
         }
         Ok(None)
     }

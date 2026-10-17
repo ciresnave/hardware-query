@@ -219,11 +219,11 @@ impl HardwareMonitor {
         F: Fn(&ThermalInfo) + Send + Sync + 'static,
     {
         self.on_event(move |event| {
-            if let MonitoringEvent::ThermalAlert { temperature, .. } = event {
-                if *temperature >= threshold {
-                    // This is a simplified version - in practice we'd pass the thermal info
-                    // For now, we'll trigger on any thermal alert above threshold
-                }
+            if let MonitoringEvent::ThermalAlert { temperature, .. } = event
+                && *temperature >= threshold
+            {
+                // This is a simplified version - in practice we'd pass the thermal info
+                // For now, we'll trigger on any thermal alert above threshold
             }
         })
         .await;
@@ -235,10 +235,10 @@ impl HardwareMonitor {
         F: Fn(&PowerProfile) + Send + Sync + 'static,
     {
         self.on_event(move |event| {
-            if let MonitoringEvent::PowerAlert { current_power, .. } = event {
-                if *current_power >= threshold {
-                    // This is a simplified version - in practice we'd pass the power profile
-                }
+            if let MonitoringEvent::PowerAlert { current_power, .. } = event
+                && *current_power >= threshold
+            {
+                // This is a simplified version - in practice we'd pass the power profile
             }
         })
         .await;
@@ -329,14 +329,13 @@ impl HardwareMonitor {
                             // Check for power alerts
                             if let (Some(current_power), Some(threshold)) =
                                 (profile.total_power_draw, config.power_threshold)
+                                && current_power >= threshold
                             {
-                                if current_power >= threshold {
-                                    events.push(MonitoringEvent::PowerAlert {
-                                        current_power,
-                                        threshold,
-                                        timestamp: std::time::SystemTime::now(),
-                                    });
-                                }
+                                events.push(MonitoringEvent::PowerAlert {
+                                    current_power,
+                                    threshold,
+                                    timestamp: std::time::SystemTime::now(),
+                                });
                             }
                             power_profile = Some(profile);
                         }

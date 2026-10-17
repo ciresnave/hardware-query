@@ -459,10 +459,10 @@ impl HardwarePresets {
                 .push("Increase system RAM to 16GB+ for better model performance".to_string());
         }
 
-        if let Some(gpu) = &overview.gpu {
-            if gpu.vram_gb < 8.0 {
-                optimizations.push("Consider GPU with more VRAM for larger models".to_string());
-            }
+        if let Some(gpu) = &overview.gpu
+            && gpu.vram_gb < 8.0
+        {
+            optimizations.push("Consider GPU with more VRAM for larger models".to_string());
         }
 
         optimizations.extend(overview.get_recommendations());
@@ -541,10 +541,10 @@ impl HardwarePresets {
 
         if overview.gpu.is_none() {
             bottlenecks.push("No dedicated GPU - severely limits gaming performance".to_string());
-        } else if let Some(gpu) = &overview.gpu {
-            if gpu.vram_gb < 4.0 {
-                bottlenecks.push("Low GPU VRAM limits texture quality and resolution".to_string());
-            }
+        } else if let Some(gpu) = &overview.gpu
+            && gpu.vram_gb < 4.0
+        {
+            bottlenecks.push("Low GPU VRAM limits texture quality and resolution".to_string());
         }
 
         if overview.cpu.cores < 4 {
