@@ -187,20 +187,15 @@ pub struct MacOSGPUInfo {
 impl MacOSGPUInfo {
     /// Query GPU information from macOS system_profiler
     pub fn query_all() -> Result<Vec<Self>> {
-        let mut gpus = Vec::new();
+        let gpus = Vec::new();
 
         if let Ok(output) = Command::new("system_profiler")
             .args(["SPDisplaysDataType", "-xml"])
             .output()
         {
-            let output_str = String::from_utf8_lossy(&output.stdout);
+            let _output_str = String::from_utf8_lossy(&output.stdout);
             // Parse system_profiler XML output
             // This is a simplified implementation - a full implementation would parse XML
-
-            if output_str.contains("Graphics/Displays:") {
-                // Extract GPU information from system_profiler output
-                // This would require proper XML parsing
-            }
         }
 
         // Alternative: use ioreg command
@@ -208,7 +203,7 @@ impl MacOSGPUInfo {
             .args(["-r", "-d", "1", "-w", "0", "-c", "IOPCIDevice"])
             .output()
         {
-            let output_str = String::from_utf8_lossy(&output.stdout);
+            let _output_str = String::from_utf8_lossy(&output.stdout);
             // Parse ioreg output for GPU devices
             // This is a simplified implementation
         }
@@ -317,13 +312,13 @@ impl MacOSMemoryInfo {
 
     /// Get detailed memory module information using system_profiler
     pub fn get_memory_modules() -> Result<Vec<MacOSMemoryModule>> {
-        let mut modules = Vec::new();
+        let modules = Vec::new();
 
         if let Ok(output) = Command::new("system_profiler")
             .args(["SPMemoryDataType", "-xml"])
             .output()
         {
-            let output_str = String::from_utf8_lossy(&output.stdout);
+            let _output_str = String::from_utf8_lossy(&output.stdout);
             // Parse system_profiler XML output for memory modules
             // This would require proper XML parsing
         }
@@ -395,7 +390,7 @@ impl MacOSSystemInfo {
             .args(["-n", "kern.boottime"])
             .output()
         {
-            let boottime_str = String::from_utf8_lossy(&output.stdout);
+            let _boottime_str = String::from_utf8_lossy(&output.stdout);
             // Parse boottime and calculate uptime
             // This would require parsing the boottime format
             Ok(0) // Placeholder

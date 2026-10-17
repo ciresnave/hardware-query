@@ -5,7 +5,7 @@ use std::collections::HashMap;
 #[cfg(target_os = "windows")]
 use wmi::{COMLibrary, WMIConnection};
 
-#[cfg(target_os = "linux")]
+#[cfg(any(target_os = "linux", target_os = "macos"))]
 use std::process::Command;
 
 /// NPU vendor information
@@ -151,6 +151,7 @@ impl NPUInfo {
     }
 
     fn detect_intel_ncs() -> Result<Vec<NPUInfo>> {
+        #[cfg_attr(not(target_os = "linux"), allow(unused_mut))]
         let mut npus = Vec::new();
 
         #[cfg(target_os = "linux")]
@@ -252,6 +253,7 @@ impl NPUInfo {
     }
 
     fn detect_intel_gna() -> Result<Vec<NPUInfo>> {
+        #[cfg_attr(target_os = "macos", allow(unused_mut))]
         let mut npus = Vec::new();
 
         // Intel GNA detection - typically integrated in Tiger Lake and newer
