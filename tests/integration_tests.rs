@@ -24,11 +24,14 @@ fn test_cpu_info_detection() {
     let model = cpu_info.model_name();
     assert!(!model.is_empty(), "CPU model name should not be empty");
 
-    // Test feature detection
-    assert!(
-        !cpu_info.features.is_empty(),
-        "CPU should have some features detected"
-    );
+    // Test feature detection. x86-only (SSE/AVX/etc.) -- CPUFeature has no
+    // ARM variants, so aarch64 (e.g. Apple Silicon) correctly reports none.
+    if cpu_info.architecture() == "x86_64" {
+        assert!(
+            !cpu_info.features.is_empty(),
+            "CPU should have some features detected"
+        );
+    }
 }
 
 #[test]

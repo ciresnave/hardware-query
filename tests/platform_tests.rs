@@ -54,11 +54,15 @@ fn test_macos_platform_detection() {
 fn test_cross_platform_cpu_features() {
     let cpu_info = CPUInfo::query().expect("Failed to query CPU info");
 
-    // Test that features are detected
-    assert!(
-        !cpu_info.features.is_empty(),
-        "CPU should have some features"
-    );
+    // Test that features are detected. x86-only (SSE/AVX/etc.) -- CPUFeature
+    // has no ARM variants, so aarch64 (e.g. Apple Silicon) correctly reports
+    // none.
+    if cpu_info.architecture() == "x86_64" {
+        assert!(
+            !cpu_info.features.is_empty(),
+            "CPU should have some features"
+        );
+    }
 
     // Test common feature checks
     let common_features = ["sse", "sse2", "sse3", "avx"];
