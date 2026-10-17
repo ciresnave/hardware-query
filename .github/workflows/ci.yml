@@ -77,14 +77,14 @@ jobs:
     - name: Test examples (Unix)
       if: runner.os != 'Windows'
       run: |
-        cargo run --example basic_hardware
+        cargo run --example 02_basic_hardware
         cargo run --example enhanced_hardware
         cargo run --example comprehensive_hardware
     
     - name: Test examples (Windows)
       if: runner.os == 'Windows'
       run: |
-        cargo run --example basic_hardware
+        cargo run --example 02_basic_hardware
         cargo run --example enhanced_hardware
         cargo run --example comprehensive_hardware
 
