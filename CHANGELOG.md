@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.2.3] - 2026-10-16
 
+### Security
+- `cargo audit` on #6's CI run found 3 advisories in transitive dependencies:
+  `bytes` 1.10.1 (RUSTSEC-2026-0007, integer overflow in `BytesMut::reserve`),
+  `crossbeam-epoch` 0.9.18 (RUSTSEC-2026-0204, invalid pointer dereference),
+  `slab` 0.4.10 (RUSTSEC-2025-0047, out-of-bounds access, also yanked).
+  `cargo update -p bytes -p crossbeam-epoch -p slab` resolves all three;
+  `cargo audit` is clean after.
+
 ### Fixed
 - `cargo fmt --all` had never been run against current stable's formatting
   defaults (no `rustfmt.toml` was ever pinned); applied with no behavior
