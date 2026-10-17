@@ -275,91 +275,79 @@ impl TPUInfo {
         #[cfg(target_os = "linux")]
         {
             // Check for Habana devices via sysfs
-            if std::path::Path::new("/sys/class/accel").exists() {
-                if let Ok(entries) = std::fs::read_dir("/sys/class/accel") {
-                    for entry in entries.flatten() {
-                        if let Some(name) = entry.file_name().to_str() {
-                            if name.starts_with("accel") {
-                                // Try to determine if it's Habana
-                                let device_path = format!("/sys/class/accel/{}/device", name);
-                                if let Ok(vendor) =
-                                    std::fs::read_to_string(format!("{}/vendor", device_path))
-                                {
-                                    if vendor.trim() == "0x1da3" {
-                                        // Intel vendor ID for Habana
-                                        if let Ok(device) = std::fs::read_to_string(format!(
-                                            "{}/device",
-                                            device_path
-                                        )) {
-                                            let (model_name, architecture, tops) =
-                                                match device.trim() {
-                                                    "0x1000" => (
-                                                        "Intel Habana Gaudi",
-                                                        TPUArchitecture::IntelHabanaGaudi,
-                                                        400.0,
-                                                    ),
-                                                    "0x1020" => (
-                                                        "Intel Habana Gaudi2",
-                                                        TPUArchitecture::IntelHabanaGaudi2,
-                                                        800.0,
-                                                    ),
-                                                    "0x1050" => (
-                                                        "Intel Habana Goya",
-                                                        TPUArchitecture::IntelHabanaGoya,
-                                                        100.0,
-                                                    ),
-                                                    _ => (
-                                                        "Intel Habana Device",
-                                                        TPUArchitecture::IntelHabanaGaudi,
-                                                        400.0,
-                                                    ),
-                                                };
+            if std::path::Path::new("/sys/class/accel").exists()
+                && let Ok(entries) = std::fs::read_dir("/sys/class/accel")
+            {
+                for entry in entries.flatten() {
+                    if let Some(name) = entry.file_name().to_str()
+                        && name.starts_with("accel")
+                    {
+                        // Try to determine if it's Habana
+                        let device_path = format!("/sys/class/accel/{}/device", name);
+                        if let Ok(vendor) =
+                            std::fs::read_to_string(format!("{}/vendor", device_path))
+                            && vendor.trim() == "0x1da3"
+                        {
+                            // Intel vendor ID for Habana
+                            if let Ok(device) =
+                                std::fs::read_to_string(format!("{}/device", device_path))
+                            {
+                                let (model_name, architecture, tops) = match device.trim() {
+                                    "0x1000" => (
+                                        "Intel Habana Gaudi",
+                                        TPUArchitecture::IntelHabanaGaudi,
+                                        400.0,
+                                    ),
+                                    "0x1020" => (
+                                        "Intel Habana Gaudi2",
+                                        TPUArchitecture::IntelHabanaGaudi2,
+                                        800.0,
+                                    ),
+                                    "0x1050" => (
+                                        "Intel Habana Goya",
+                                        TPUArchitecture::IntelHabanaGoya,
+                                        100.0,
+                                    ),
+                                    _ => (
+                                        "Intel Habana Device",
+                                        TPUArchitecture::IntelHabanaGaudi,
+                                        400.0,
+                                    ),
+                                };
 
-                                            tpus.push(TPUInfo {
-                                                vendor: TPUVendor::Intel,
-                                                model_name: model_name.to_string(),
-                                                architecture,
-                                                connection_type: TPUConnectionType::PCIe,
-                                                tops_performance: Some(tops),
-                                                memory_gb: Some(32.0), // Typical for Gaudi
-                                                memory_bandwidth_gbps: Some(2400.0), // HBM2E bandwidth
-                                                core_count: Some(8), // Typical core count
-                                                driver_version: Self::get_tpu_driver_version(),
-                                                firmware_version: None,
-                                                device_id: Some(device.trim().to_string()),
-                                                supported_frameworks: vec![
-                                                    "PyTorch".to_string(),
-                                                    "TensorFlow".to_string(),
-                                                    "ONNX Runtime".to_string(),
-                                                    "Habana SynapseAI".to_string(),
-                                                ],
-                                                power_consumption: Some(350.0), // High performance = high power
-                                                temperature: None,
-                                                clock_frequency: Some(1300), // ~1.3GHz
-                                                supported_dtypes: vec![
-                                                    "float32".to_string(),
-                                                    "bfloat16".to_string(),
-                                                    "float16".to_string(),
-                                                    "int8".to_string(),
-                                                ],
-                                                capabilities: HashMap::from([
-                                                    (
-                                                        "matrix_multiply_engine".to_string(),
-                                                        "true".to_string(),
-                                                    ),
-                                                    (
-                                                        "tensor_processor_core".to_string(),
-                                                        "true".to_string(),
-                                                    ),
-                                                    (
-                                                        "high_bandwidth_memory".to_string(),
-                                                        "true".to_string(),
-                                                    ),
-                                                ]),
-                                            });
-                                        }
-                                    }
-                                }
+                                tpus.push(TPUInfo {
+                                    vendor: TPUVendor::Intel,
+                                    model_name: model_name.to_string(),
+                                    architecture,
+                                    connection_type: TPUConnectionType::PCIe,
+                                    tops_performance: Some(tops),
+                                    memory_gb: Some(32.0), // Typical for Gaudi
+                                    memory_bandwidth_gbps: Some(2400.0), // HBM2E bandwidth
+                                    core_count: Some(8),   // Typical core count
+                                    driver_version: Self::get_tpu_driver_version(),
+                                    firmware_version: None,
+                                    device_id: Some(device.trim().to_string()),
+                                    supported_frameworks: vec![
+                                        "PyTorch".to_string(),
+                                        "TensorFlow".to_string(),
+                                        "ONNX Runtime".to_string(),
+                                        "Habana SynapseAI".to_string(),
+                                    ],
+                                    power_consumption: Some(350.0), // High performance = high power
+                                    temperature: None,
+                                    clock_frequency: Some(1300), // ~1.3GHz
+                                    supported_dtypes: vec![
+                                        "float32".to_string(),
+                                        "bfloat16".to_string(),
+                                        "float16".to_string(),
+                                        "int8".to_string(),
+                                    ],
+                                    capabilities: HashMap::from([
+                                        ("matrix_multiply_engine".to_string(), "true".to_string()),
+                                        ("tensor_processor_core".to_string(), "true".to_string()),
+                                        ("high_bandwidth_memory".to_string(), "true".to_string()),
+                                    ]),
+                                });
                             }
                         }
                     }
@@ -389,13 +377,12 @@ impl TPUInfo {
             if let Ok(output) = Command::new("python3")
                 .args(["-c", "import tensorflow; print(tensorflow.__version__)"])
                 .output()
+                && output.status.success()
             {
-                if output.status.success() {
-                    return Some(format!(
-                        "TensorFlow {}",
-                        String::from_utf8_lossy(&output.stdout).trim()
-                    ));
-                }
+                return Some(format!(
+                    "TensorFlow {}",
+                    String::from_utf8_lossy(&output.stdout).trim()
+                ));
             }
         }
         None

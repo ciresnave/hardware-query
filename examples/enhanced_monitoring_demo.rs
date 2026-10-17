@@ -51,12 +51,12 @@ async fn main() -> Result<()> {
             println!("   Total Power Draw: {:.1} W", total_power);
 
             // Battery life estimation
-            if let Some(battery) = hw_info.battery() {
-                if let Some(remaining_time) = power_profile.estimate_battery_life(battery) {
-                    let hours = remaining_time.as_secs() / 3600;
-                    let minutes = (remaining_time.as_secs() % 3600) / 60;
-                    println!("   Estimated Battery Life: {}h {}m", hours, minutes);
-                }
+            if let Some(battery) = hw_info.battery()
+                && let Some(remaining_time) = power_profile.estimate_battery_life(battery)
+            {
+                let hours = remaining_time.as_secs() / 3600;
+                let minutes = (remaining_time.as_secs() % 3600) / 60;
+                println!("   Estimated Battery Life: {}h {}m", hours, minutes);
             }
         }
 
@@ -234,11 +234,11 @@ fn assess_ai_readiness(hw_info: &HardwareInfo) {
     }
 
     // Thermal considerations
-    if let Some(max_temp) = hw_info.thermal().max_temperature() {
-        if max_temp > 80.0 {
-            score -= 10;
-            recommendations.push("High temperatures may cause throttling during AI workloads");
-        }
+    if let Some(max_temp) = hw_info.thermal().max_temperature()
+        && max_temp > 80.0
+    {
+        score -= 10;
+        recommendations.push("High temperatures may cause throttling during AI workloads");
     }
 
     println!("   Overall AI Readiness Score: {}/100", score);
@@ -305,23 +305,23 @@ async fn demo_monitoring() -> Result<()> {
                 power_profile,
                 ..
             } => {
-                if let Some(thermal) = thermal_info {
-                    if let Some(max_temp) = thermal.max_temperature() {
-                        println!(
-                            "     📊 Update: Max temp {:.1}°C, Status: {}",
-                            max_temp,
-                            thermal.thermal_status()
-                        );
-                    }
+                if let Some(thermal) = thermal_info
+                    && let Some(max_temp) = thermal.max_temperature()
+                {
+                    println!(
+                        "     📊 Update: Max temp {:.1}°C, Status: {}",
+                        max_temp,
+                        thermal.thermal_status()
+                    );
                 }
 
-                if let Some(power) = power_profile {
-                    if let Some(total_power) = power.total_power_draw {
-                        println!(
-                            "     📊 Update: Power draw {:.1}W, Efficiency: {:.2}",
-                            total_power, power.efficiency_score
-                        );
-                    }
+                if let Some(power) = power_profile
+                    && let Some(total_power) = power.total_power_draw
+                {
+                    println!(
+                        "     📊 Update: Power draw {:.1}W, Efficiency: {:.2}",
+                        total_power, power.efficiency_score
+                    );
                 }
             }
             MonitoringEvent::MonitoringError { error, .. } => {

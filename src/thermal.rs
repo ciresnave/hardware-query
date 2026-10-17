@@ -430,30 +430,29 @@ impl ThermalInfo {
         }
 
         // CPU specific recommendations
-        if let Some(cpu_temp) = self.cpu_temperature() {
-            if cpu_temp > 85.0 {
-                recommendations.push(CoolingRecommendation {
-                    recommendation_type: CoolingRecommendationType::CPUCoolerUpgrade,
-                    description: "CPU temperatures are high. Consider upgrading CPU cooler"
-                        .to_string(),
-                    expected_temp_reduction: Some(8.0),
-                    difficulty: ImplementationDifficulty::Moderate,
-                    cost_category: CostCategory::Medium,
-                });
-            }
+        if let Some(cpu_temp) = self.cpu_temperature()
+            && cpu_temp > 85.0
+        {
+            recommendations.push(CoolingRecommendation {
+                recommendation_type: CoolingRecommendationType::CPUCoolerUpgrade,
+                description: "CPU temperatures are high. Consider upgrading CPU cooler".to_string(),
+                expected_temp_reduction: Some(8.0),
+                difficulty: ImplementationDifficulty::Moderate,
+                cost_category: CostCategory::Medium,
+            });
         }
 
         // Environmental recommendations
-        if let Some(ambient) = self.ambient_temperature {
-            if ambient > 30.0 {
-                recommendations.push(CoolingRecommendation {
+        if let Some(ambient) = self.ambient_temperature
+            && ambient > 30.0
+        {
+            recommendations.push(CoolingRecommendation {
                     recommendation_type: CoolingRecommendationType::EnvironmentalChanges,
                     description: "High ambient temperature detected. Improve room ventilation or use air conditioning".to_string(),
                     expected_temp_reduction: Some(ambient - 25.0),
                     difficulty: ImplementationDifficulty::Easy,
                     cost_category: CostCategory::Free,
                 });
-            }
         }
 
         recommendations

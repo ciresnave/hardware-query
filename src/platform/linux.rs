@@ -112,18 +112,14 @@ impl LinuxCPUInfo {
 
         if let Ok(entries) = fs::read_dir("/sys/devices/system/cpu/vulnerabilities") {
             for entry in entries.flatten() {
-                if let Ok(file_type) = entry.file_type() {
-                    if file_type.is_file() {
-                        if let Some(vuln_name) = entry.file_name().to_str() {
-                            if let Ok(status) = fs::read_to_string(entry.path()) {
-                                let status = status.trim();
-                                if !status.starts_with("Not affected")
-                                    && !status.starts_with("Mitigation")
-                                {
-                                    vulnerabilities.push(format!("{}: {}", vuln_name, status));
-                                }
-                            }
-                        }
+                if let Ok(file_type) = entry.file_type()
+                    && file_type.is_file()
+                    && let Some(vuln_name) = entry.file_name().to_str()
+                    && let Ok(status) = fs::read_to_string(entry.path())
+                {
+                    let status = status.trim();
+                    if !status.starts_with("Not affected") && !status.starts_with("Mitigation") {
+                        vulnerabilities.push(format!("{}: {}", vuln_name, status));
                     }
                 }
             }
@@ -141,16 +137,14 @@ impl LinuxCPUInfo {
                 let cache_path = format!("/sys/devices/system/cpu/cpu0/cache/index{}/", level);
 
                 // Check if this cache level exists
-                if let Ok(type_content) = fs::read_to_string(format!("{}type", cache_path)) {
-                    if type_content.trim() == *cache_type || type_content.trim() == "Unified" {
-                        if let Ok(size_content) = fs::read_to_string(format!("{}size", cache_path))
-                        {
-                            let size_str = size_content.trim().replace("K", "");
-                            if let Ok(size) = size_str.parse::<u32>() {
-                                let key = format!("L{} {}", level, cache_type);
-                                cache_info.insert(key, size);
-                            }
-                        }
+                if let Ok(type_content) = fs::read_to_string(format!("{}type", cache_path))
+                    && (type_content.trim() == *cache_type || type_content.trim() == "Unified")
+                    && let Ok(size_content) = fs::read_to_string(format!("{}size", cache_path))
+                {
+                    let size_str = size_content.trim().replace("K", "");
+                    if let Ok(size) = size_str.parse::<u32>() {
+                        let key = format!("L{} {}", level, cache_type);
+                        cache_info.insert(key, size);
                     }
                 }
             }
@@ -166,26 +160,23 @@ impl LinuxCPUInfo {
         // Try to get scaling frequencies
         if let Ok(min_freq) =
             fs::read_to_string("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_min_freq")
+            && let Ok(freq) = min_freq.trim().parse::<u32>()
         {
-            if let Ok(freq) = min_freq.trim().parse::<u32>() {
-                freq_info.insert("min_frequency_khz".to_string(), freq);
-            }
+            freq_info.insert("min_frequency_khz".to_string(), freq);
         }
 
         if let Ok(max_freq) =
             fs::read_to_string("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq")
+            && let Ok(freq) = max_freq.trim().parse::<u32>()
         {
-            if let Ok(freq) = max_freq.trim().parse::<u32>() {
-                freq_info.insert("max_frequency_khz".to_string(), freq);
-            }
+            freq_info.insert("max_frequency_khz".to_string(), freq);
         }
 
         if let Ok(cur_freq) =
             fs::read_to_string("/sys/devices/system/cpu/cpu0/cpufreq/scaling_cur_freq")
+            && let Ok(freq) = cur_freq.trim().parse::<u32>()
         {
-            if let Ok(freq) = cur_freq.trim().parse::<u32>() {
-                freq_info.insert("current_frequency_khz".to_string(), freq);
-            }
+            freq_info.insert("current_frequency_khz".to_string(), freq);
         }
 
         Ok(freq_info)
@@ -201,11 +192,11 @@ impl LinuxCPUInfo {
         ];
 
         for path in &thermal_paths {
-            if let Ok(temp_str) = fs::read_to_string(path) {
-                if let Ok(temp) = temp_str.trim().parse::<i32>() {
-                    // Convert from millidegrees to degrees
-                    return Ok(Some(temp as f32 / 1000.0));
-                }
+            if let Ok(temp_str) = fs::read_to_string(path)
+                && let Ok(temp) = temp_str.trim().parse::<i32>()
+            {
+                // Convert from millidegrees to degrees
+                return Ok(Some(temp as f32 / 1000.0));
             }
         }
 
@@ -213,12 +204,11 @@ impl LinuxCPUInfo {
         if let Ok(output) = Command::new("sensors").arg("-A").arg("-u").output() {
             let output_str = String::from_utf8_lossy(&output.stdout);
             for line in output_str.lines() {
-                if line.contains("temp1_input") || line.contains("Core 0") {
-                    if let Some(temp_str) = line.split(':').nth(1) {
-                        if let Ok(temp) = temp_str.trim().parse::<f32>() {
-                            return Ok(Some(temp));
-                        }
-                    }
+                if (line.contains("temp1_input") || line.contains("Core 0"))
+                    && let Some(temp_str) = line.split(':').nth(1)
+                    && let Ok(temp) = temp_str.trim().parse::<f32>()
+                {
+                    return Ok(Some(temp));
                 }
             }
         }
@@ -405,31 +395,31 @@ impl LinuxMemoryInfo {
                         memory_type: String::new(),
                         locator: String::new(),
                     });
-                } else if let Some(ref mut module) = current_module {
-                    if let Some((key, value)) = line.split_once(':') {
-                        let key = key.trim();
-                        let value = value.trim();
+                } else if let Some(ref mut module) = current_module
+                    && let Some((key, value)) = line.split_once(':')
+                {
+                    let key = key.trim();
+                    let value = value.trim();
 
-                        match key {
-                            "Size" => {
-                                if value.contains("MB") {
-                                    let size_str = value.replace(" MB", "");
-                                    module.size_mb = size_str.parse().unwrap_or(0);
-                                } else if value.contains("GB") {
-                                    let size_str = value.replace(" GB", "");
-                                    if let Ok(size_gb) = size_str.parse::<u64>() {
-                                        module.size_mb = size_gb * 1024;
-                                    }
+                    match key {
+                        "Size" => {
+                            if value.contains("MB") {
+                                let size_str = value.replace(" MB", "");
+                                module.size_mb = size_str.parse().unwrap_or(0);
+                            } else if value.contains("GB") {
+                                let size_str = value.replace(" GB", "");
+                                if let Ok(size_gb) = size_str.parse::<u64>() {
+                                    module.size_mb = size_gb * 1024;
                                 }
                             }
-                            "Speed" => {
-                                let speed_str = value.replace(" MHz", "");
-                                module.speed_mhz = speed_str.parse().ok();
-                            }
-                            "Type" => module.memory_type = value.to_string(),
-                            "Locator" => module.locator = value.to_string(),
-                            _ => {}
                         }
+                        "Speed" => {
+                            let speed_str = value.replace(" MHz", "");
+                            module.speed_mhz = speed_str.parse().ok();
+                        }
+                        "Type" => module.memory_type = value.to_string(),
+                        "Locator" => module.locator = value.to_string(),
+                        _ => {}
                     }
                 }
             }

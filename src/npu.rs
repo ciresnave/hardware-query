@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 #[cfg(target_os = "windows")]
-use wmi::{COMLibrary, WMIConnection};
+use wmi::WMIConnection;
 
 #[cfg(any(target_os = "linux", target_os = "macos"))]
 use std::process::Command;
@@ -212,36 +212,34 @@ impl NPUInfo {
         #[cfg(target_os = "windows")]
         {
             // Windows detection via WMI and device manager
-            if let Ok(com_con) = COMLibrary::new() {
-                if let Ok(wmi_con) = WMIConnection::new(com_con) {
-                    let query = "SELECT * FROM Win32_USBHub WHERE DeviceID LIKE '%VID_03E7%'";
-                    if let Ok(results) = wmi_con.raw_query(query) {
-                        let results: Vec<HashMap<String, wmi::Variant>> = results;
-                        for device in results {
-                            if let Some(device_id) = device.get("DeviceID") {
-                                let device_id_str = format!("{device_id:?}");
-                                if device_id_str.contains("PID_2485") {
-                                    npus.push(NPUInfo {
-                                        vendor: NPUVendor::Intel,
-                                        model_name: "Intel Neural Compute Stick 2".to_string(),
-                                        npu_type: NPUType::USB,
-                                        architecture: NPUArchitecture::IntelMovidius,
-                                        tops_performance: Some(4.0),
-                                        memory_mb: None,
-                                        driver_version: Self::get_intel_ncs_driver_version(),
-                                        firmware_version: None,
-                                        pci_device_id: None,
-                                        usb_device_id: Some("03e7:2485".to_string()),
-                                        supported_frameworks: vec![
-                                            "OpenVINO".to_string(),
-                                            "ONNX Runtime".to_string(),
-                                        ],
-                                        power_consumption: Some(1.0),
-                                        temperature: None,
-                                        clock_frequency: None,
-                                        capabilities: HashMap::new(),
-                                    });
-                                }
+            if let Ok(wmi_con) = WMIConnection::new() {
+                let query = "SELECT * FROM Win32_USBHub WHERE DeviceID LIKE '%VID_03E7%'";
+                if let Ok(results) = wmi_con.raw_query(query) {
+                    let results: Vec<HashMap<String, wmi::Variant>> = results;
+                    for device in results {
+                        if let Some(device_id) = device.get("DeviceID") {
+                            let device_id_str = format!("{device_id:?}");
+                            if device_id_str.contains("PID_2485") {
+                                npus.push(NPUInfo {
+                                    vendor: NPUVendor::Intel,
+                                    model_name: "Intel Neural Compute Stick 2".to_string(),
+                                    npu_type: NPUType::USB,
+                                    architecture: NPUArchitecture::IntelMovidius,
+                                    tops_performance: Some(4.0),
+                                    memory_mb: None,
+                                    driver_version: Self::get_intel_ncs_driver_version(),
+                                    firmware_version: None,
+                                    pci_device_id: None,
+                                    usb_device_id: Some("03e7:2485".to_string()),
+                                    supported_frameworks: vec![
+                                        "OpenVINO".to_string(),
+                                        "ONNX Runtime".to_string(),
+                                    ],
+                                    power_consumption: Some(1.0),
+                                    temperature: None,
+                                    clock_frequency: None,
+                                    capabilities: HashMap::new(),
+                                });
                             }
                         }
                     }
@@ -290,36 +288,34 @@ impl NPUInfo {
         #[cfg(target_os = "windows")]
         {
             // Windows GNA detection via device manager
-            if let Ok(com_con) = COMLibrary::new() {
-                if let Ok(wmi_con) = WMIConnection::new(com_con) {
-                    let query = "SELECT * FROM Win32_PnPEntity WHERE Description LIKE '%GNA%' OR Name LIKE '%Gaussian%'";
-                    if let Ok(results) = wmi_con.raw_query(query) {
-                        let results: Vec<HashMap<String, wmi::Variant>> = results;
-                        if !results.is_empty() {
-                            npus.push(NPUInfo {
-                                vendor: NPUVendor::Intel,
-                                model_name: "Intel Gaussian Neural Accelerator".to_string(),
-                                npu_type: NPUType::Integrated,
-                                architecture: NPUArchitecture::IntelGNA,
-                                tops_performance: Some(1.0),
-                                memory_mb: None,
-                                driver_version: Self::get_intel_gna_driver_version(),
-                                firmware_version: None,
-                                pci_device_id: None,
-                                usb_device_id: None,
-                                supported_frameworks: vec![
-                                    "OpenVINO".to_string(),
-                                    "Intel GNA Library".to_string(),
-                                ],
-                                power_consumption: Some(0.5),
-                                temperature: None,
-                                clock_frequency: Some(400),
-                                capabilities: HashMap::from([
-                                    ("keyword_spotting".to_string(), "true".to_string()),
-                                    ("noise_reduction".to_string(), "true".to_string()),
-                                ]),
-                            });
-                        }
+            if let Ok(wmi_con) = WMIConnection::new() {
+                let query = "SELECT * FROM Win32_PnPEntity WHERE Description LIKE '%GNA%' OR Name LIKE '%Gaussian%'";
+                if let Ok(results) = wmi_con.raw_query(query) {
+                    let results: Vec<HashMap<String, wmi::Variant>> = results;
+                    if !results.is_empty() {
+                        npus.push(NPUInfo {
+                            vendor: NPUVendor::Intel,
+                            model_name: "Intel Gaussian Neural Accelerator".to_string(),
+                            npu_type: NPUType::Integrated,
+                            architecture: NPUArchitecture::IntelGNA,
+                            tops_performance: Some(1.0),
+                            memory_mb: None,
+                            driver_version: Self::get_intel_gna_driver_version(),
+                            firmware_version: None,
+                            pci_device_id: None,
+                            usb_device_id: None,
+                            supported_frameworks: vec![
+                                "OpenVINO".to_string(),
+                                "Intel GNA Library".to_string(),
+                            ],
+                            power_consumption: Some(0.5),
+                            temperature: None,
+                            clock_frequency: Some(400),
+                            capabilities: HashMap::from([
+                                ("keyword_spotting".to_string(), "true".to_string()),
+                                ("noise_reduction".to_string(), "true".to_string()),
+                            ]),
+                        });
                     }
                 }
             }
@@ -335,43 +331,41 @@ impl NPUInfo {
         // Intel XDNA (Meteor Lake and newer integrated NPU)
         #[cfg(target_os = "windows")]
         {
-            if let Ok(com_con) = COMLibrary::new() {
-                if let Ok(wmi_con) = WMIConnection::new(com_con) {
-                    let query = "SELECT * FROM Win32_PnPEntity WHERE Description LIKE '%NPU%' OR Name LIKE '%Neural%'";
-                    if let Ok(results) = wmi_con.raw_query(query) {
-                        let results: Vec<HashMap<String, wmi::Variant>> = results;
-                        for device in results {
-                            if let Some(name) = device.get("Name") {
-                                let name_str = format!("{name:?}");
-                                if name_str.contains("Intel")
-                                    && (name_str.contains("NPU") || name_str.contains("Neural"))
-                                {
-                                    npus.push(NPUInfo {
-                                        vendor: NPUVendor::Intel,
-                                        model_name: "Intel XDNA NPU".to_string(),
-                                        npu_type: NPUType::Integrated,
-                                        architecture: NPUArchitecture::IntelXDNA,
-                                        tops_performance: Some(11.5), // Meteor Lake NPU
-                                        memory_mb: None,
-                                        driver_version: Self::get_intel_npu_driver_version(),
-                                        firmware_version: None,
-                                        pci_device_id: None,
-                                        usb_device_id: None,
-                                        supported_frameworks: vec![
-                                            "OpenVINO".to_string(),
-                                            "ONNX Runtime".to_string(),
-                                            "DirectML".to_string(),
-                                        ],
-                                        power_consumption: Some(2.0),
-                                        temperature: None,
-                                        clock_frequency: Some(1400), // ~1.4GHz
-                                        capabilities: HashMap::from([
-                                            ("int8".to_string(), "true".to_string()),
-                                            ("fp16".to_string(), "true".to_string()),
-                                            ("dynamic_shapes".to_string(), "true".to_string()),
-                                        ]),
-                                    });
-                                }
+            if let Ok(wmi_con) = WMIConnection::new() {
+                let query = "SELECT * FROM Win32_PnPEntity WHERE Description LIKE '%NPU%' OR Name LIKE '%Neural%'";
+                if let Ok(results) = wmi_con.raw_query(query) {
+                    let results: Vec<HashMap<String, wmi::Variant>> = results;
+                    for device in results {
+                        if let Some(name) = device.get("Name") {
+                            let name_str = format!("{name:?}");
+                            if name_str.contains("Intel")
+                                && (name_str.contains("NPU") || name_str.contains("Neural"))
+                            {
+                                npus.push(NPUInfo {
+                                    vendor: NPUVendor::Intel,
+                                    model_name: "Intel XDNA NPU".to_string(),
+                                    npu_type: NPUType::Integrated,
+                                    architecture: NPUArchitecture::IntelXDNA,
+                                    tops_performance: Some(11.5), // Meteor Lake NPU
+                                    memory_mb: None,
+                                    driver_version: Self::get_intel_npu_driver_version(),
+                                    firmware_version: None,
+                                    pci_device_id: None,
+                                    usb_device_id: None,
+                                    supported_frameworks: vec![
+                                        "OpenVINO".to_string(),
+                                        "ONNX Runtime".to_string(),
+                                        "DirectML".to_string(),
+                                    ],
+                                    power_consumption: Some(2.0),
+                                    temperature: None,
+                                    clock_frequency: Some(1400), // ~1.4GHz
+                                    capabilities: HashMap::from([
+                                        ("int8".to_string(), "true".to_string()),
+                                        ("fp16".to_string(), "true".to_string()),
+                                        ("dynamic_shapes".to_string(), "true".to_string()),
+                                    ]),
+                                });
                             }
                         }
                     }
@@ -391,10 +385,9 @@ impl NPUInfo {
             if let Ok(output) = Command::new("python3")
                 .args(["-c", "import openvino; print(openvino.__version__)"])
                 .output()
+                && output.status.success()
             {
-                if output.status.success() {
-                    return Some(String::from_utf8_lossy(&output.stdout).trim().to_string());
-                }
+                return Some(String::from_utf8_lossy(&output.stdout).trim().to_string());
             }
         }
         None

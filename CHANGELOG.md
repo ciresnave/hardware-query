@@ -5,6 +5,69 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-10-16
+
+### Breaking
+- `rust-version` raised 1.85 -> 1.95 (see below) -- a breaking change for
+  consumers on an older toolchain, hence the major bump rather than 0.2.4
+  under the pre-1.0 "second number is major" convention.
+
+### Removed
+- `core-foundation`, `core-foundation-sys`, `system-configuration` (macOS)
+  and `nix`, `libc` (Linux): 5 declared dependencies with no `use` of them
+  anywhere in this crate's source (confirmed by grep, not inferred --
+  `libc` found independently of the other 4, same reasoning). Dead
+  weight, and it shrinks the surface a future macOS/Linux dependency
+  bump can break. `libc` and `core-foundation-sys` may still appear in
+  `Cargo.lock` as transitive dependencies of other crates (e.g. tokio,
+  nvml-wrapper) -- only our own direct, unused declarations are removed.
+
+
+### Changed
+- All dependencies bumped to their latest published version (CireSnave's
+  standing policy: all projects' deps at their most recent version at all
+  times). Most were in-range patch/minor bumps via `cargo update` alone.
+  8 required raising the `Cargo.toml` requirement itself because the
+  latest published release crossed a pre-1.0 "major" boundary (second
+  version component): `sysinfo` 0.36->0.39, `wmi` 0.17->0.18,
+  `windows` 0.61->0.62, `nix` 0.30->0.31, `system-configuration` 0.6->0.8,
+  `nvml-wrapper` 0.11->0.13, `mockall` (dev) 0.13->0.15, `criterion` (dev)
+  0.6->0.8.
+- `rust-version` raised 1.85 -> 1.95: `sysinfo` 0.39.6 requires Rust 1.95
+  and `criterion` 0.8.2 requires 1.86 (permitted per CireSnave: "Feel free
+  to raise the minimum Rust version on any project").
+
+### Fixed
+- `wmi` 0.18 removed `COMLibrary` from its public API entirely --
+  `WMIConnection::new()` now takes no arguments and manages COM
+  initialization internally. Updated all 16 call sites across
+  `cpu.rs`/`gpu.rs`/`npu.rs`/`platform/windows.rs`. Verified by an actual
+  native Windows build + the full test suite (including live WMI queries
+  against this machine's real hardware), not just a compile check.
+- The MSRV bump to 1.95 unlocked `if`-let-chains, which made clippy's
+  `collapsible_if` fire on ~46 previously-unreachable nested
+  `if let`/`if` sites (43 found on Linux, 3 more that only exist in
+  Windows-only code paths and only showed up building natively on
+  Windows). Applied via `cargo clippy --fix`, each one a mechanical,
+  semantically-identical collapse -- spot-checked by diff, confirmed by
+  the full test suite staying green on both platforms.
+- 2 platform-conditional `unused_mut`/`unused_import` warnings in
+  `cpu.rs`/`tpu.rs` that only clippy's Windows run could see (variables
+  only mutated/imports only used inside `#[cfg(target_os = "linux")]`
+  blocks) -- same pattern as the dead_code fixes in 0.2.3, gated rather
+  than silenced.
+
+### Known gaps
+- `core-foundation`, `core-foundation-sys`, `system-configuration` (macOS)
+  and `nix` (Linux) are declared dependencies with **no `use` of them
+  anywhere in this crate's source** -- confirmed by grep, not inferred.
+  Their version bumps are consequently zero-risk to our own code (nothing
+  calls into them), but I have no way to verify macOS compiles at all
+  (no Mac, no cross-toolchain here) -- the macOS CI job is the only real
+  check for `system-configuration`'s 0.6->0.8 jump (two major bumps).
+  Separate question from this PR: are these 4 crates dead weight that
+  should just be removed?
+
 ## [0.2.3] - 2026-10-16
 
 ### Security

@@ -413,10 +413,10 @@ impl CPUInfo {
         {
             if let Ok(content) = fs::read_to_string("/proc/cpuinfo") {
                 for line in content.lines() {
-                    if line.starts_with("stepping") {
-                        if let Some(value) = line.split(':').nth(1) {
-                            return Ok(value.trim().parse().ok());
-                        }
+                    if line.starts_with("stepping")
+                        && let Some(value) = line.split(':').nth(1)
+                    {
+                        return Ok(value.trim().parse().ok());
                     }
                 }
             }
@@ -429,10 +429,10 @@ impl CPUInfo {
         {
             if let Ok(content) = fs::read_to_string("/proc/cpuinfo") {
                 for line in content.lines() {
-                    if line.starts_with("cpu family") {
-                        if let Some(value) = line.split(':').nth(1) {
-                            return Ok(value.trim().parse().ok());
-                        }
+                    if line.starts_with("cpu family")
+                        && let Some(value) = line.split(':').nth(1)
+                    {
+                        return Ok(value.trim().parse().ok());
                     }
                 }
             }
@@ -445,10 +445,11 @@ impl CPUInfo {
         {
             if let Ok(content) = fs::read_to_string("/proc/cpuinfo") {
                 for line in content.lines() {
-                    if line.starts_with("model") && !line.starts_with("model name") {
-                        if let Some(value) = line.split(':').nth(1) {
-                            return Ok(value.trim().parse().ok());
-                        }
+                    if line.starts_with("model")
+                        && !line.starts_with("model name")
+                        && let Some(value) = line.split(':').nth(1)
+                    {
+                        return Ok(value.trim().parse().ok());
                     }
                 }
             }
@@ -461,10 +462,10 @@ impl CPUInfo {
         {
             if let Ok(content) = fs::read_to_string("/proc/cpuinfo") {
                 for line in content.lines() {
-                    if line.starts_with("microcode") {
-                        if let Some(value) = line.split(':').nth(1) {
-                            return Some(value.trim().to_string());
-                        }
+                    if line.starts_with("microcode")
+                        && let Some(value) = line.split(':').nth(1)
+                    {
+                        return Some(value.trim().to_string());
                     }
                 }
             }
@@ -480,14 +481,13 @@ impl CPUInfo {
         {
             if let Ok(entries) = fs::read_dir("/sys/devices/system/cpu/vulnerabilities") {
                 for entry in entries.flatten() {
-                    if let Ok(name) = entry.file_name().into_string() {
-                        if let Ok(status) = fs::read_to_string(entry.path()) {
-                            let status = status.trim();
-                            if !status.starts_with("Not affected")
-                                && !status.starts_with("Mitigation")
-                            {
-                                vulnerabilities.push(format!("{}: {}", name, status));
-                            }
+                    if let Ok(name) = entry.file_name().into_string()
+                        && let Ok(status) = fs::read_to_string(entry.path())
+                    {
+                        let status = status.trim();
+                        if !status.starts_with("Not affected") && !status.starts_with("Mitigation")
+                        {
+                            vulnerabilities.push(format!("{}: {}", name, status));
                         }
                     }
                 }
@@ -500,7 +500,7 @@ impl CPUInfo {
     // Windows-specific implementations
     #[cfg(target_os = "windows")]
     fn detect_physical_cores_windows() -> Result<u32> {
-        match wmi::WMIConnection::new(wmi::COMLibrary::new()?) {
+        match wmi::WMIConnection::new() {
             Ok(wmi_con) => {
                 let results: Vec<std::collections::HashMap<String, wmi::Variant>> = wmi_con
                     .raw_query("SELECT NumberOfCores FROM Win32_Processor")
@@ -510,10 +510,10 @@ impl CPUInfo {
                         ))
                     })?;
 
-                if let Some(result) = results.first() {
-                    if let Some(wmi::Variant::UI4(cores)) = result.get("NumberOfCores") {
-                        return Ok(*cores);
-                    }
+                if let Some(result) = results.first()
+                    && let Some(wmi::Variant::UI4(cores)) = result.get("NumberOfCores")
+                {
+                    return Ok(*cores);
                 }
                 Err(HardwareQueryError::system_info_unavailable(
                     "Could not get core count from WMI",
@@ -525,7 +525,7 @@ impl CPUInfo {
 
     #[cfg(target_os = "windows")]
     fn detect_max_frequency_windows() -> Result<u32> {
-        match wmi::WMIConnection::new(wmi::COMLibrary::new()?) {
+        match wmi::WMIConnection::new() {
             Ok(wmi_con) => {
                 let results: Vec<std::collections::HashMap<String, wmi::Variant>> = wmi_con
                     .raw_query("SELECT MaxClockSpeed FROM Win32_Processor")
@@ -535,10 +535,10 @@ impl CPUInfo {
                         ))
                     })?;
 
-                if let Some(result) = results.first() {
-                    if let Some(wmi::Variant::UI4(freq)) = result.get("MaxClockSpeed") {
-                        return Ok(*freq);
-                    }
+                if let Some(result) = results.first()
+                    && let Some(wmi::Variant::UI4(freq)) = result.get("MaxClockSpeed")
+                {
+                    return Ok(*freq);
                 }
                 Ok(3000) // Default fallback
             }
@@ -548,7 +548,7 @@ impl CPUInfo {
 
     #[cfg(target_os = "windows")]
     fn detect_l1_cache_windows() -> Result<u32> {
-        match wmi::WMIConnection::new(wmi::COMLibrary::new()?) {
+        match wmi::WMIConnection::new() {
             Ok(wmi_con) => {
                 let results: Vec<std::collections::HashMap<String, wmi::Variant>> = wmi_con
                     .raw_query("SELECT MaxCacheSize FROM Win32_CacheMemory WHERE Level = 3")
@@ -558,10 +558,10 @@ impl CPUInfo {
                         ))
                     })?;
 
-                if let Some(result) = results.first() {
-                    if let Some(wmi::Variant::UI4(size)) = result.get("MaxCacheSize") {
-                        return Ok(*size);
-                    }
+                if let Some(result) = results.first()
+                    && let Some(wmi::Variant::UI4(size)) = result.get("MaxCacheSize")
+                {
+                    return Ok(*size);
                 }
                 Ok(32) // Default fallback
             }
@@ -600,12 +600,11 @@ impl CPUInfo {
         if let Ok(content) = fs::read_to_string("/proc/cpuinfo") {
             let mut core_ids = std::collections::HashSet::new();
             for line in content.lines() {
-                if line.starts_with("core id") {
-                    if let Some(value) = line.split(':').nth(1) {
-                        if let Ok(id) = value.trim().parse::<u32>() {
-                            core_ids.insert(id);
-                        }
-                    }
+                if line.starts_with("core id")
+                    && let Some(value) = line.split(':').nth(1)
+                    && let Ok(id) = value.trim().parse::<u32>()
+                {
+                    core_ids.insert(id);
                 }
             }
             if !core_ids.is_empty() {
@@ -619,12 +618,11 @@ impl CPUInfo {
     fn detect_max_frequency_linux() -> Result<u32> {
         if let Ok(content) = fs::read_to_string("/proc/cpuinfo") {
             for line in content.lines() {
-                if line.starts_with("cpu MHz") {
-                    if let Some(value) = line.split(':').nth(1) {
-                        if let Ok(freq) = value.trim().parse::<f32>() {
-                            return Ok(freq as u32);
-                        }
-                    }
+                if line.starts_with("cpu MHz")
+                    && let Some(value) = line.split(':').nth(1)
+                    && let Ok(freq) = value.trim().parse::<f32>()
+                {
+                    return Ok(freq as u32);
                 }
             }
         }
@@ -632,10 +630,9 @@ impl CPUInfo {
         // Try reading from scaling_max_freq
         if let Ok(content) =
             fs::read_to_string("/sys/devices/system/cpu/cpu0/cpufreq/scaling_max_freq")
+            && let Ok(freq) = content.trim().parse::<u32>()
         {
-            if let Ok(freq) = content.trim().parse::<u32>() {
-                return Ok(freq / 1000); // Convert from kHz to MHz
-            }
+            return Ok(freq / 1000); // Convert from kHz to MHz
         }
 
         Ok(3000) // Default fallback
@@ -680,34 +677,34 @@ impl CPUInfo {
 
         if let Ok(content) = fs::read_to_string("/proc/cpuinfo") {
             for line in content.lines() {
-                if line.starts_with("flags") {
-                    if let Some(flags_str) = line.split(':').nth(1) {
-                        let flags: Vec<&str> = flags_str.split_whitespace().collect();
+                if line.starts_with("flags")
+                    && let Some(flags_str) = line.split(':').nth(1)
+                {
+                    let flags: Vec<&str> = flags_str.split_whitespace().collect();
 
-                        for flag in flags {
-                            match flag {
-                                "sse" => features.push(CPUFeature::SSE),
-                                "sse2" => features.push(CPUFeature::SSE2),
-                                "sse3" => features.push(CPUFeature::SSE3),
-                                "sse4_1" => features.push(CPUFeature::SSE41),
-                                "sse4_2" => features.push(CPUFeature::SSE42),
-                                "avx" => features.push(CPUFeature::AVX),
-                                "avx2" => features.push(CPUFeature::AVX2),
-                                "avx512f" => features.push(CPUFeature::AVX512),
-                                "fma" => features.push(CPUFeature::FMA),
-                                "aes" => features.push(CPUFeature::AES),
-                                "sha_ni" => features.push(CPUFeature::SHA),
-                                "bmi1" => features.push(CPUFeature::BMI1),
-                                "bmi2" => features.push(CPUFeature::BMI2),
-                                "rdrand" => features.push(CPUFeature::RDRAND),
-                                "rdseed" => features.push(CPUFeature::RDSEED),
-                                "popcnt" => features.push(CPUFeature::POPCNT),
-                                "lzcnt" => features.push(CPUFeature::LZCNT),
-                                _ => {}
-                            }
+                    for flag in flags {
+                        match flag {
+                            "sse" => features.push(CPUFeature::SSE),
+                            "sse2" => features.push(CPUFeature::SSE2),
+                            "sse3" => features.push(CPUFeature::SSE3),
+                            "sse4_1" => features.push(CPUFeature::SSE41),
+                            "sse4_2" => features.push(CPUFeature::SSE42),
+                            "avx" => features.push(CPUFeature::AVX),
+                            "avx2" => features.push(CPUFeature::AVX2),
+                            "avx512f" => features.push(CPUFeature::AVX512),
+                            "fma" => features.push(CPUFeature::FMA),
+                            "aes" => features.push(CPUFeature::AES),
+                            "sha_ni" => features.push(CPUFeature::SHA),
+                            "bmi1" => features.push(CPUFeature::BMI1),
+                            "bmi2" => features.push(CPUFeature::BMI2),
+                            "rdrand" => features.push(CPUFeature::RDRAND),
+                            "rdseed" => features.push(CPUFeature::RDSEED),
+                            "popcnt" => features.push(CPUFeature::POPCNT),
+                            "lzcnt" => features.push(CPUFeature::LZCNT),
+                            _ => {}
                         }
-                        break;
                     }
+                    break;
                 }
             }
         }
@@ -847,12 +844,12 @@ impl CPUInfo {
         for (sysctl_name, feature) in feature_checks {
             let output = Command::new("sysctl").arg("-n").arg(sysctl_name).output();
 
-            if let Ok(output) = output {
-                if output.status.success() {
-                    let value_str = String::from_utf8_lossy(&output.stdout);
-                    if value_str.trim() == "1" {
-                        features.push(feature);
-                    }
+            if let Ok(output) = output
+                && output.status.success()
+            {
+                let value_str = String::from_utf8_lossy(&output.stdout);
+                if value_str.trim() == "1" {
+                    features.push(feature);
                 }
             }
         }

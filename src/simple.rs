@@ -229,16 +229,16 @@ impl SystemOverview {
         let mut score = 0;
 
         // GPU contribution (50 points max)
-        if let Some(gpu) = &self.gpu {
-            if gpu.ai_capable {
-                score += 30;
-                if gpu.vram_gb >= 8.0 {
-                    score += 15;
-                } else if gpu.vram_gb >= 4.0 {
-                    score += 10;
-                } else {
-                    score += 5;
-                }
+        if let Some(gpu) = &self.gpu
+            && gpu.ai_capable
+        {
+            score += 30;
+            if gpu.vram_gb >= 8.0 {
+                score += 15;
+            } else if gpu.vram_gb >= 4.0 {
+                score += 10;
+            } else {
+                score += 5;
             }
         }
 
@@ -279,11 +279,10 @@ impl SystemOverview {
         // GPU recommendations
         if self.gpu.is_none() {
             recommendations.push("Add a dedicated GPU for AI/ML acceleration".to_string());
-        } else if let Some(gpu) = &self.gpu {
-            if gpu.vram_gb < 4.0 {
-                recommendations
-                    .push("Consider a GPU with more VRAM for large AI models".to_string());
-            }
+        } else if let Some(gpu) = &self.gpu
+            && gpu.vram_gb < 4.0
+        {
+            recommendations.push("Consider a GPU with more VRAM for large AI models".to_string());
         }
 
         // Storage recommendations

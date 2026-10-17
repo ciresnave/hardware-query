@@ -132,12 +132,12 @@ impl MacOSCPUInfo {
         {
             let output_str = String::from_utf8_lossy(&output.stdout);
             for line in output_str.lines() {
-                if line.contains("CPU die temperature") {
-                    if let Some(temp_str) = line.split(':').nth(1) {
-                        let temp_str = temp_str.trim().replace("C", "");
-                        if let Ok(temp) = temp_str.parse::<f32>() {
-                            return Ok(Some(temp));
-                        }
+                if line.contains("CPU die temperature")
+                    && let Some(temp_str) = line.split(':').nth(1)
+                {
+                    let temp_str = temp_str.trim().replace("C", "");
+                    if let Ok(temp) = temp_str.parse::<f32>() {
+                        return Ok(Some(temp));
                     }
                 }
             }
@@ -297,12 +297,12 @@ impl MacOSMemoryInfo {
         if let Ok(output) = Command::new("sysctl").args(["-n", "vm.swapusage"]).output() {
             let swap_str = String::from_utf8_lossy(&output.stdout);
             // Parse swap usage string
-            if let Some(used_start) = swap_str.find("used = ") {
-                if let Some(used_end) = swap_str[used_start + 7..].find("M") {
-                    let used_str = &swap_str[used_start + 7..used_start + 7 + used_end];
-                    if let Ok(used_mb) = used_str.parse::<u64>() {
-                        mem_info.swap_usage = used_mb * 1024 * 1024; // Convert to bytes
-                    }
+            if let Some(used_start) = swap_str.find("used = ")
+                && let Some(used_end) = swap_str[used_start + 7..].find("M")
+            {
+                let used_str = &swap_str[used_start + 7..used_start + 7 + used_end];
+                if let Ok(used_mb) = used_str.parse::<u64>() {
+                    mem_info.swap_usage = used_mb * 1024 * 1024; // Convert to bytes
                 }
             }
         }

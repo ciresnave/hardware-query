@@ -136,72 +136,73 @@ impl ARMHardwareInfo {
     #[cfg(target_arch = "aarch64")]
     fn detect_raspberry_pi() -> Result<Option<ARMHardwareInfo>> {
         // Check for Raspberry Pi specific files
-        if let Ok(model) = std::fs::read_to_string("/proc/device-tree/model") {
-            if model.to_lowercase().contains("raspberry pi") {
-                let mut hardware_info = ARMHardwareInfo {
-                    system_type: ARMSystemType::RaspberryPi,
-                    board_model: model.trim_end_matches('\0').to_string(),
-                    board_revision: Self::get_pi_revision(),
-                    serial_number: Self::get_pi_serial(),
-                    cpu_architecture: Self::get_cpu_architecture(),
-                    cpu_cores: Self::get_cpu_cores(),
-                    gpu_info: Some("VideoCore GPU".to_string()),
-                    acceleration_features: Self::get_pi_acceleration_features(),
-                    ml_capabilities: Self::get_pi_ml_capabilities(),
-                    memory_mb: Self::get_memory_size(),
-                    interfaces: Self::get_pi_interfaces(),
-                    power_info: Self::get_pi_power_info(),
-                };
+        if let Ok(model) = std::fs::read_to_string("/proc/device-tree/model")
+            && model.to_lowercase().contains("raspberry pi")
+        {
+            let mut hardware_info = ARMHardwareInfo {
+                system_type: ARMSystemType::RaspberryPi,
+                board_model: model.trim_end_matches('\0').to_string(),
+                board_revision: Self::get_pi_revision(),
+                serial_number: Self::get_pi_serial(),
+                cpu_architecture: Self::get_cpu_architecture(),
+                cpu_cores: Self::get_cpu_cores(),
+                gpu_info: Some("VideoCore GPU".to_string()),
+                acceleration_features: Self::get_pi_acceleration_features(),
+                ml_capabilities: Self::get_pi_ml_capabilities(),
+                memory_mb: Self::get_memory_size(),
+                interfaces: Self::get_pi_interfaces(),
+                power_info: Self::get_pi_power_info(),
+            };
 
-                // Determine specific Pi model for better capabilities
-                if model.contains("Pi 5") {
-                    hardware_info
-                        .acceleration_features
-                        .push("VideoCore VII GPU".to_string());
-                    hardware_info.ml_capabilities.insert(
-                        "inference_performance".to_string(),
-                        "High (ARM Cortex-A76)".to_string(),
-                    );
-                } else if model.contains("Pi 4") {
-                    hardware_info
-                        .acceleration_features
-                        .push("VideoCore VI GPU".to_string());
-                    hardware_info.ml_capabilities.insert(
-                        "inference_performance".to_string(),
-                        "Medium (ARM Cortex-A72)".to_string(),
-                    );
-                }
-
-                return Ok(Some(hardware_info));
+            // Determine specific Pi model for better capabilities
+            if model.contains("Pi 5") {
+                hardware_info
+                    .acceleration_features
+                    .push("VideoCore VII GPU".to_string());
+                hardware_info.ml_capabilities.insert(
+                    "inference_performance".to_string(),
+                    "High (ARM Cortex-A76)".to_string(),
+                );
+            } else if model.contains("Pi 4") {
+                hardware_info
+                    .acceleration_features
+                    .push("VideoCore VI GPU".to_string());
+                hardware_info.ml_capabilities.insert(
+                    "inference_performance".to_string(),
+                    "Medium (ARM Cortex-A72)".to_string(),
+                );
             }
+
+            return Ok(Some(hardware_info));
         }
 
         // Alternative detection via /proc/cpuinfo
-        if let Ok(cpuinfo) = std::fs::read_to_string("/proc/cpuinfo") {
-            if cpuinfo.contains("BCM") && cpuinfo.contains("Raspberry Pi") {
-                // Extract model from hardware line
-                for line in cpuinfo.lines() {
-                    if line.starts_with("Model") {
-                        return Ok(Some(ARMHardwareInfo {
-                            system_type: ARMSystemType::RaspberryPi,
-                            board_model: line
-                                .split(':')
-                                .nth(1)
-                                .unwrap_or("Unknown")
-                                .trim()
-                                .to_string(),
-                            board_revision: Self::get_pi_revision(),
-                            serial_number: Self::get_pi_serial(),
-                            cpu_architecture: Self::get_cpu_architecture(),
-                            cpu_cores: Self::get_cpu_cores(),
-                            gpu_info: Some("VideoCore GPU".to_string()),
-                            acceleration_features: Self::get_pi_acceleration_features(),
-                            ml_capabilities: Self::get_pi_ml_capabilities(),
-                            memory_mb: Self::get_memory_size(),
-                            interfaces: Self::get_pi_interfaces(),
-                            power_info: Self::get_pi_power_info(),
-                        }));
-                    }
+        if let Ok(cpuinfo) = std::fs::read_to_string("/proc/cpuinfo")
+            && cpuinfo.contains("BCM")
+            && cpuinfo.contains("Raspberry Pi")
+        {
+            // Extract model from hardware line
+            for line in cpuinfo.lines() {
+                if line.starts_with("Model") {
+                    return Ok(Some(ARMHardwareInfo {
+                        system_type: ARMSystemType::RaspberryPi,
+                        board_model: line
+                            .split(':')
+                            .nth(1)
+                            .unwrap_or("Unknown")
+                            .trim()
+                            .to_string(),
+                        board_revision: Self::get_pi_revision(),
+                        serial_number: Self::get_pi_serial(),
+                        cpu_architecture: Self::get_cpu_architecture(),
+                        cpu_cores: Self::get_cpu_cores(),
+                        gpu_info: Some("VideoCore GPU".to_string()),
+                        acceleration_features: Self::get_pi_acceleration_features(),
+                        ml_capabilities: Self::get_pi_ml_capabilities(),
+                        memory_mb: Self::get_memory_size(),
+                        interfaces: Self::get_pi_interfaces(),
+                        power_info: Self::get_pi_power_info(),
+                    }));
                 }
             }
         }
@@ -253,32 +254,32 @@ impl ARMHardwareInfo {
         }
 
         // Check via lshw or nvidia-smi if available
-        if let Ok(output) = Command::new("nvidia-smi").arg("-L").output() {
-            if output.status.success() {
-                let output_str = String::from_utf8_lossy(&output.stdout);
-                if output_str.contains("Tegra") || output_str.contains("Jetson") {
-                    return Ok(Some(ARMHardwareInfo {
-                        system_type: ARMSystemType::NVIDIAJetson,
-                        board_model: "NVIDIA Jetson (detected via nvidia-smi)".to_string(),
-                        board_revision: None,
-                        serial_number: None,
-                        cpu_architecture: Self::get_cpu_architecture(),
-                        cpu_cores: Self::get_cpu_cores(),
-                        gpu_info: Some(output_str.trim().to_string()),
-                        acceleration_features: vec!["CUDA".to_string(), "TensorRT".to_string()],
-                        ml_capabilities: HashMap::from([
-                            ("cuda_support".to_string(), "true".to_string()),
-                            ("tensorrt_support".to_string(), "true".to_string()),
-                        ]),
-                        memory_mb: Self::get_memory_size(),
-                        interfaces: vec![
-                            "USB".to_string(),
-                            "Ethernet".to_string(),
-                            "WiFi".to_string(),
-                        ],
-                        power_info: None,
-                    }));
-                }
+        if let Ok(output) = Command::new("nvidia-smi").arg("-L").output()
+            && output.status.success()
+        {
+            let output_str = String::from_utf8_lossy(&output.stdout);
+            if output_str.contains("Tegra") || output_str.contains("Jetson") {
+                return Ok(Some(ARMHardwareInfo {
+                    system_type: ARMSystemType::NVIDIAJetson,
+                    board_model: "NVIDIA Jetson (detected via nvidia-smi)".to_string(),
+                    board_revision: None,
+                    serial_number: None,
+                    cpu_architecture: Self::get_cpu_architecture(),
+                    cpu_cores: Self::get_cpu_cores(),
+                    gpu_info: Some(output_str.trim().to_string()),
+                    acceleration_features: vec!["CUDA".to_string(), "TensorRT".to_string()],
+                    ml_capabilities: HashMap::from([
+                        ("cuda_support".to_string(), "true".to_string()),
+                        ("tensorrt_support".to_string(), "true".to_string()),
+                    ]),
+                    memory_mb: Self::get_memory_size(),
+                    interfaces: vec![
+                        "USB".to_string(),
+                        "Ethernet".to_string(),
+                        "WiFi".to_string(),
+                    ],
+                    power_info: None,
+                }));
             }
         }
 
@@ -363,12 +364,11 @@ impl ARMHardwareInfo {
     fn get_memory_size() -> Option<u64> {
         if let Ok(meminfo) = std::fs::read_to_string("/proc/meminfo") {
             for line in meminfo.lines() {
-                if line.starts_with("MemTotal:") {
-                    if let Some(kb_str) = line.split_whitespace().nth(1) {
-                        if let Ok(kb) = kb_str.parse::<u64>() {
-                            return Some(kb / 1024); // Convert KB to MB
-                        }
-                    }
+                if line.starts_with("MemTotal:")
+                    && let Some(kb_str) = line.split_whitespace().nth(1)
+                    && let Ok(kb) = kb_str.parse::<u64>()
+                {
+                    return Some(kb / 1024); // Convert KB to MB
                 }
             }
         }

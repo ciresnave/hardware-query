@@ -42,10 +42,9 @@ fn test_macos_platform_detection() {
         .arg("-n")
         .arg("hw.physicalcpu")
         .output()
+        && output.status.success()
     {
-        if output.status.success() {
-            println!("macOS sysctl command works");
-        }
+        println!("macOS sysctl command works");
     }
 }
 

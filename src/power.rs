@@ -165,18 +165,17 @@ impl PowerProfile {
     pub fn estimate_battery_life(&self, battery: &BatteryInfo) -> Option<Duration> {
         if let (Some(power_draw), Some(capacity_wh)) =
             (self.total_power_draw, battery.capacity_wh())
+            && power_draw > 0.0
         {
-            if power_draw > 0.0 {
-                // Calculate remaining capacity in wh
-                let remaining_wh = capacity_wh * (battery.charge_percent() / 100.0);
+            // Calculate remaining capacity in wh
+            let remaining_wh = capacity_wh * (battery.charge_percent() / 100.0);
 
-                // Estimate hours remaining
-                let hours_remaining = remaining_wh / power_draw;
+            // Estimate hours remaining
+            let hours_remaining = remaining_wh / power_draw;
 
-                // Convert to Duration
-                let seconds = (hours_remaining * 3600.0) as u64;
-                return Some(Duration::from_secs(seconds));
-            }
+            // Convert to Duration
+            let seconds = (hours_remaining * 3600.0) as u64;
+            return Some(Duration::from_secs(seconds));
         }
         None
     }
@@ -186,30 +185,30 @@ impl PowerProfile {
         let mut optimizations = Vec::new();
 
         // CPU optimization recommendations
-        if let Some(cpu_power) = self.cpu_power {
-            if cpu_power > 50.0 {
-                optimizations.push(PowerOptimization {
-                    category: OptimizationCategory::CPUScaling,
-                    recommendation: "Consider reducing CPU frequency or enabling power saving mode"
-                        .to_string(),
-                    expected_savings_watts: Some(cpu_power * 0.2),
-                    performance_impact: 0.85,
-                    priority: OptimizationPriority::Medium,
-                });
-            }
+        if let Some(cpu_power) = self.cpu_power
+            && cpu_power > 50.0
+        {
+            optimizations.push(PowerOptimization {
+                category: OptimizationCategory::CPUScaling,
+                recommendation: "Consider reducing CPU frequency or enabling power saving mode"
+                    .to_string(),
+                expected_savings_watts: Some(cpu_power * 0.2),
+                performance_impact: 0.85,
+                priority: OptimizationPriority::Medium,
+            });
         }
 
         // GPU optimization recommendations
-        if let Some(gpu_power) = self.gpu_power {
-            if gpu_power > 100.0 {
-                optimizations.push(PowerOptimization {
+        if let Some(gpu_power) = self.gpu_power
+            && gpu_power > 100.0
+        {
+            optimizations.push(PowerOptimization {
                     category: OptimizationCategory::GPUPowerLimit,
                     recommendation: "GPU power consumption is high. Consider lowering power limit or reducing graphics settings".to_string(),
                     expected_savings_watts: Some(gpu_power * 0.15),
                     performance_impact: 0.90,
                     priority: OptimizationPriority::Medium,
                 });
-            }
         }
 
         // Thermal throttling recommendations
@@ -244,11 +243,11 @@ impl PowerProfile {
 
     /// Calculate power efficiency score based on performance and consumption
     pub fn calculate_efficiency_with_performance(&self, performance_score: f64) -> f64 {
-        if let Some(power_draw) = self.total_power_draw {
-            if power_draw > 0.0 {
-                // Calculate performance per watt
-                return (performance_score / power_draw as f64).min(1.0);
-            }
+        if let Some(power_draw) = self.total_power_draw
+            && power_draw > 0.0
+        {
+            // Calculate performance per watt
+            return (performance_score / power_draw as f64).min(1.0);
         }
         0.0
     }
