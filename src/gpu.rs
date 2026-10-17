@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use nvml_wrapper::Nvml;
 
 #[cfg(target_os = "windows")]
-use wmi::{COMLibrary, WMIConnection};
+use wmi::WMIConnection;
 
 /// GPU vendor information
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -391,7 +391,7 @@ impl GPUInfo {
         #[cfg(target_os = "windows")]
         {
             // Use WMI to query Intel GPUs
-            match WMIConnection::new(COMLibrary::new()?) {
+            match WMIConnection::new() {
                 Ok(wmi_con) => {
                     let results: Vec<std::collections::HashMap<String, wmi::Variant>> = wmi_con
                         .raw_query("SELECT Name, AdapterRAM FROM Win32_VideoController WHERE Name LIKE '%Intel%'")
@@ -455,10 +455,9 @@ impl GPUInfo {
         #[cfg(target_os = "windows")]
         {
             use std::collections::HashMap;
-            use wmi::{COMLibrary, Variant, WMIConnection};
+            use wmi::{Variant, WMIConnection};
 
-            let com_con = COMLibrary::new()?;
-            let wmi_con = WMIConnection::new(com_con)?;
+            let wmi_con = WMIConnection::new()?;
 
             let results: Vec<HashMap<String, Variant>> = wmi_con
                 .raw_query("SELECT * FROM Win32_VideoController WHERE PNPDeviceID IS NOT NULL")?;

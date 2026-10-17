@@ -1,7 +1,7 @@
 /// Enhanced platform-specific hardware detection for Windows
 use crate::{HardwareQueryError, Result};
 use std::collections::HashMap;
-use wmi::{COMLibrary, Variant, WMIConnection};
+use wmi::{Variant, WMIConnection};
 
 /// Windows-specific CPU information
 #[derive(Debug, Clone)]
@@ -28,8 +28,7 @@ pub struct WindowsCPUInfo {
 impl WindowsCPUInfo {
     /// Query detailed CPU information from Windows WMI
     pub fn query() -> Result<Self> {
-        let com_lib = COMLibrary::new()?;
-        let wmi_con = WMIConnection::new(com_lib)?;
+        let wmi_con = WMIConnection::new()?;
 
         // Query processor information
         let processor_query = "SELECT Name, Manufacturer, Description, Family, Model, Stepping, NumberOfCores, NumberOfLogicalProcessors, MaxClockSpeed, L1CacheSize, L2CacheSize, L3CacheSize, Voltage, CurrentVoltage FROM Win32_Processor";
@@ -66,8 +65,7 @@ impl WindowsCPUInfo {
 
     /// Get CPU temperature from thermal sensors
     pub fn get_temperature(&self) -> Result<Option<f32>> {
-        let com_lib = COMLibrary::new()?;
-        let wmi_con = WMIConnection::new(com_lib)?;
+        let wmi_con = WMIConnection::new()?;
 
         // Try to get temperature from thermal zone
         let thermal_query = "SELECT Temperature FROM Win32_TemperatureProbe";
@@ -86,8 +84,7 @@ impl WindowsCPUInfo {
 
     /// Get CPU power consumption
     pub fn get_power_consumption(&self) -> Result<Option<f32>> {
-        let com_lib = COMLibrary::new()?;
-        let wmi_con = WMIConnection::new(com_lib)?;
+        let wmi_con = WMIConnection::new()?;
 
         // Try to get power information from performance counters
         let power_query = "SELECT PowerConsumption FROM Win32_Processor";
@@ -167,8 +164,7 @@ pub struct WindowsGPUInfo {
 impl WindowsGPUInfo {
     /// Query GPU information from Windows WMI
     pub fn query_all() -> Result<Vec<Self>> {
-        let com_lib = COMLibrary::new()?;
-        let wmi_con = WMIConnection::new(com_lib)?;
+        let wmi_con = WMIConnection::new()?;
 
         let gpu_query = "SELECT Name, AdapterCompatibility, AdapterRAM, DriverVersion, DeviceID, DedicatedVideoMemory, SharedSystemMemory FROM Win32_VideoController";
         let gpus: Vec<HashMap<String, Variant>> = wmi_con.raw_query(gpu_query)?;
@@ -243,8 +239,7 @@ pub struct WindowsMemoryModule {
 impl WindowsMemoryInfo {
     /// Query memory information from Windows WMI
     pub fn query() -> Result<Self> {
-        let com_lib = COMLibrary::new()?;
-        let wmi_con = WMIConnection::new(com_lib)?;
+        let wmi_con = WMIConnection::new()?;
 
         // Query physical memory
         let memory_query = "SELECT TotalPhysicalMemory, AvailablePhysicalMemory, TotalVirtualMemorySize, AvailableVirtualMemory FROM Win32_OperatingSystem";
