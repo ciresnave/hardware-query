@@ -338,23 +338,23 @@ impl VirtualizationInfo {
     pub fn get_security_recommendations(&self) -> Vec<String> {
         let mut recommendations = Vec::new();
 
-        if self.is_containerized() {
-            if let Some(runtime) = &self.container_runtime {
-                if runtime.security_context.privileged {
-                    recommendations.push(
-                        "Consider running container in non-privileged mode for better security"
-                            .to_string(),
-                    );
-                }
+        if self.is_containerized()
+            && let Some(runtime) = &self.container_runtime
+        {
+            if runtime.security_context.privileged {
+                recommendations.push(
+                    "Consider running container in non-privileged mode for better security"
+                        .to_string(),
+                );
+            }
 
-                if !runtime.security_context.user_namespace {
-                    recommendations
-                        .push("Enable user namespace mapping for better isolation".to_string());
-                }
+            if !runtime.security_context.user_namespace {
+                recommendations
+                    .push("Enable user namespace mapping for better isolation".to_string());
+            }
 
-                if runtime.security_context.security_profile.is_none() {
-                    recommendations.push("Apply AppArmor/SELinux security profile".to_string());
-                }
+            if runtime.security_context.security_profile.is_none() {
+                recommendations.push("Apply AppArmor/SELinux security profile".to_string());
             }
         }
 
