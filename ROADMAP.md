@@ -19,3 +19,16 @@
   behavior, or should the memory branch's weight increase, or should
   `is_ai_ready()` require memory plus at least one other signal? No action
   taken pending this decision.
+
+- **`src/arm.rs`'s Raspberry Pi / NVIDIA Jetson detection is gated by
+  `target_arch` only, not `target_os`.** `detect_raspberry_pi()` reads
+  `/proc/device-tree/model` and `/proc/cpuinfo`, and `get_memory_size()`
+  reads `/proc/meminfo` -- all Linux-only paths -- under
+  `#[cfg(target_arch = "aarch64")]` with no `target_os = "linux"` alongside
+  it. Surfaced on 0.3.0's CI run: `macos-latest` is Apple Silicon
+  (aarch64), the first non-Linux aarch64 runner this crate has ever built
+  on, and this code now compiles (and at runtime would uselessly fail to
+  find those paths) on aarch64 macOS and aarch64 Windows too. Needs its own
+  PR adding `target_os = "linux"` to the gate (or an explicit macOS/Windows
+  arm would-be-identical-looking function that actually detects the right
+  things there) -- not folded into the clippy fix that found it.
