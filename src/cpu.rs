@@ -844,12 +844,12 @@ impl CPUInfo {
         for (sysctl_name, feature) in feature_checks {
             let output = Command::new("sysctl").arg("-n").arg(sysctl_name).output();
 
-            if let Ok(output) = output {
-                if output.status.success() {
-                    let value_str = String::from_utf8_lossy(&output.stdout);
-                    if value_str.trim() == "1" {
-                        features.push(feature);
-                    }
+            if let Ok(output) = output
+                && output.status.success()
+            {
+                let value_str = String::from_utf8_lossy(&output.stdout);
+                if value_str.trim() == "1" {
+                    features.push(feature);
                 }
             }
         }
