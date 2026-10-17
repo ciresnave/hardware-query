@@ -490,15 +490,20 @@ impl SystemOverview {
 }
 
 // Display implementations for better debugging
+impl SystemOverview {
+    fn gpu_summary(&self) -> String {
+        match &self.gpu {
+            Some(gpu) => format!("{} ({:.1} GB VRAM)", gpu.name, gpu.vram_gb),
+            None => "None (integrated graphics)".to_string(),
+        }
+    }
+}
+
 impl std::fmt::Display for SystemOverview {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "CPU: {} ({} cores)", self.cpu.name, self.cpu.cores)?;
         writeln!(f, "Memory: {:.1} GB", self.memory_gb)?;
-        if let Some(gpu) = &self.gpu {
-            writeln!(f, "GPU: {} ({:.1} GB VRAM)", gpu.name, gpu.vram_gb)?;
-        } else {
-            writeln!(f, "GPU: None (integrated graphics)")?;
-        }
+        writeln!(f, "GPU: {}", self.gpu_summary())?;
         writeln!(
             f,
             "Storage: {:.0} GB {} (Health: {})",
